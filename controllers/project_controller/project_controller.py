@@ -10,8 +10,6 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-# NOTE: EKF update/locate is currently located in "corridor-localization-testing" or "brandon" branch on GitHUB:
-# https://github.umn.edu/bradt026/csci5552-project/blob/brandon/controllers/project_controller/project_controller.py
 
 def rotMat(theta):
     c, s = math.cos(theta), math.sin(theta)
