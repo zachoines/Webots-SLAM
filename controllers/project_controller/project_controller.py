@@ -1,309 +1,31 @@
 from controller import Supervisor
-from controller import CameraRecognitionObject
 
 # Local class imports
 from pid import PID
+from occupancy import OccupancyMap
 from AStar import AStar
+from utility import *
+from config import *
+from matrix_transform import *
+from EKM_Agent import EKF_Agent
 
 # Other contrib imports
-import numpy as np
 import math
-import matplotlib.pyplot as plt
+import numpy as np
+import cv2
+import sys
 
-
-def rotMat(theta):
-    c, s = math.cos(theta), math.sin(theta)
-    return np.array([[c, -s], [s, c]])
-
-
-# Unit length vector pointing in "look" direction
-def heading_vector(phi):
-    return np.array([
-        np.cos(phi),
-        -np.sin(phi)
-    ])
-
-
-# Angle from -180 to 180 between two vectors
-def signed_angle(a, b):
-    unsigned_angle = angle(a, b)
-    sign = np.sign(np.cross(a, b))
-    return unsigned_angle * sign
-
-
-# Angle between two vectors
-def angle(a, b):
-    dem = (np.linalg.norm(a) * np.linalg.norm(b))
-
-    if dem == 0:
-        return 0
-    try:
-        return math.acos(
-            (a @ b) / dem
-        )
-    except:
-      return 0
-
-
-# Angle between the forward vector of our robot (direction_vector) and (X, Y) location of target
-# https://math.stackexchange.com/questions/2062021/finding-the-angle-between-a-point-and-another-point-with-an-angle
-def angle_to(current_pos, target_pos, direction_vector, degrees=False, signed=False):
-    if not signed:
-        vector_to = target_pos - current_pos
-        theta = angle(direction_vector, vector_to)
-        return np.rad2deg(theta) if degrees else theta
-    else:
-        vector_to = target_pos - current_pos
-        theta = signed_angle(vector_to, direction_vector)
-        return np.rad2deg(theta) if degrees else theta
-
-
-# Euclidean distance
-def distance(a, b):
-    return np.sum(np.square(a - b))
-
-
-# Robot's orientation with global north
-def get_bearing_in_degrees(compass):
-    (x, y, _) = compass.getValues()
-    rad = np.arctan2(y, x)
-    bearing = (rad - 1.5708) / math.pi * 180.0
-    if bearing < 0.0:
-        bearing = bearing + 360.0
-    return bearing
-
-
-# NOTE: Use this for a reference location
-def robot_state_ground_truth():
-    global_position = np.array(gps.getValues()[0:2])
-    global_bearing = np.radians(get_bearing_in_degrees(compass))
-    return global_position, global_bearing
-
-def sample_route():
-    # Note: Make sure to place robot in the bottom right corner of right-hand maze
-    return [
-        [1.35, -0.7],
-        [1.35, 0.0],
-        [0.85, 0.0],
-        [0.44, -0.7],
-        [0.0, -1.0],
-        [-0.44, -0.7],
-        [-1.13, 0.0],
-        [-1.35, 0.0],
-        [-1.35, -0.77],
-        [-2.83, -0.77],
-        [-2.83, -0.74],
-        [-2.83, 0.74],
-        [-1.44, 0.74],
-        [-1.44, 0.0],
-        [-0.87, 0.0],
-        [-0.44, 0.7],
-        [0, 1],
-        [0.44, .7],
-        [0.9, 0.0]
-    ]
-
-# Euclidean distance
-def distance(a, b):
-    return np.linalg.norm(a - b)
-
-
-def stop_robot():
-    leftMotor.setVelocity(0.0)
-    rightMotor.setVelocity(0.0)
-
-
-def move_robot(v, w, lm, rm):
-    v_left = (v - w) * L * 0.5
-    v_right = (v + w) * L * 0.5
-
-    lm.setVelocity(v_left)
-    rm.setVelocity(v_right)
-
-
-def get_lidar_readings(l):
-    dists, range_max = np.array(l.getRangeImage()), l.getMaxRange()
-    num_points = len(dists)
-    angles = np.linspace(0.0, np.pi, num_points)
-    filtered_dists = []
-    for dist in dists:
-        if dist > range_max:
-            filtered_dists.append(range_max)
-        else:
-            filtered_dists.append(dist)
-    return angles, filtered_dists
-
-
-def transform_points_to_frame(theta, trans, points):
-    rot = rotMat(theta).T
-    trans = np.array(trans)
-    transformed = []
-    for p in points:
-        rotated = rot @ p
-        translated = rotated + trans
-        transformed.append(translated)
-    return np.array(transformed)
-
-
-def printLidar(robot_pos, x, y):
-    plt.figure(figsize=(10, 10))
-    rx, ry = robot_pos
-    plt.plot([
-        x,
-        np.ones(np.size(x)) * rx],
-        [y, np.ones(np.size(y)) * ry],
-        "ro-",
-        scalex=False,
-        scaley=False
-    )  # lines from 0,0 to the
-    plt.axis("equal")
-    plt.grid(True)
-    plt.show()
-
-
-
-def printOccupancyMap(pmap):
-    pmap = np.flip(pmap.T, 0)  # For some reason the axis' are swapped and the pixel rotated 90
-    xyres = np.array(pmap).shape
-    plt.figure(figsize=(10, 10))
-    plt.subplot(122)
-    plt.imshow(pmap, cmap="PiYG_r")
-    plt.clim(-0.4, 1.4)
-    plt.gca().set_xticks(np.arange(-.5, xyres[0], 1), minor=True)
-    plt.gca().set_yticks(np.arange(-.5, xyres[1], 1), minor=True)
-    plt.grid(True, which="minor", color="w", linewidth=.6, alpha=0.5)
-    plt.colorbar()
-    plt.show()
-
-
-def bresenham(current, target):
-    """
-    Bresenham's Line Algorithm
-    wikipedia.org/wiki/Bresenham's_line_algorithm
-    https://www.geeksforgeeks.org/bresenhams-line-generation-algorithm/
-    """
-
-    swap = False
-    steep = False
-    pixel_step = 1
-    start, end = current, target
-
-    def delta(t1, t2):
-        x1, y1 = t2
-        x2, y2 = t1
-        return (x2 - x1, y2 - y1)
-
-    def swap_tuple(t1, t2):
-        tmp = t1
-        t1 = t2
-        t2 = tmp
-        return t1, t2
-
-    def reverse(t):
-        return t[::-1]
-
-    def check_steep(t1, t2):
-        diff = delta(t1, t2)
-        return abs(diff[1]) > abs(diff[0])
-
-    # If the line is very steep, then rotate it and build up the intersecting points in reverse
-    if check_steep(end, start):
-        steep = True
-        start = reverse(start)
-        end = reverse(end)
-
-    # Swap if needed
-    if start[0] > end[0]:
-        start, end = swap_tuple(start, end)
-        swap = True
-
-    # iterate over bounding box generating points between start and end
-    all_points = []
-    diff = delta(end, start)
-    curr_err = np.floor(diff[0] / 2)
-    step = pixel_step if start[1] < end[1] else -pixel_step
-    y = start[1]
-    for x in range(start[0], end[0] + 1):
-        all_points.append((y, x) if steep else (x, y))
-        curr_err -= abs(diff[1])
-        if curr_err < 0:
-            y += step
-            curr_err += diff[0]
-
-    # Since we swapped points and build the line-up in reverse
-    if swap: all_points.reverse()
-    return np.array(all_points)
-
-
-
-def map(x, in_min, in_max, out_min, out_max):
-    mapped = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-    return mapped
-
-
-def extend_occupied(occupancy_map, x, y):
-    shape = occupancy_map.shape
-    x_next = (x + 1) if (shape[0] - 1) >= (x + 1) else x
-    y_next = (y + 1) if (shape[1] - 1) >= (y + 1) else y
-    occupancy_map[x][y] = 1.0
-    occupancy_map[x_next][y] = 1.0
-    occupancy_map[x][y_next] = 1.0
-    occupancy_map[x_next][y_next] = 1.0
-
-def generate_occupancy_map(robot_pos, ox, oy, xy_resolution, map_size=8.0):
-    # Determine bounds of the occupancy map
-
-    ox_min, oy_min = min(ox), min(oy)
-    ox_max, oy_max = max(ox), max(oy)
-    max_x = map_size / 2
-    max_y = max_x
-    max_x = np.floor(max(ox_max, max_x))
-    max_y = np.floor(max(oy_max, max_y))
-    min_x = min(-max_x, ox_min)
-    min_y = min(-max_y, oy_min)
-    x_w = int(round(map_size / xy_resolution))
-    y_w = x_w
-
-    occupancy_map = np.zeros((x_w, y_w)) + 0.5  # default probability for the map is 0.5
-    robot_x = int(np.floor(np.round(map(robot_pos[0], min_x, max_x, 0, occupancy_map.shape[0] - 1))))
-    robot_y = int(np.floor(np.round(map(robot_pos[1], min_y, max_y, 0, occupancy_map.shape[1] - 1))))
-
-    occupied_x_grid_index = np.clip(np.round((ox - min_x) / xy_resolution), 0, x_w - 1).astype(int)  #  occupied area x coord
-    occupied_y_grid_index = np.clip(np.round((oy - min_y) / xy_resolution), 0, y_w - 1).astype(int)  #  occupied area y coord
-
-    # occupancy grid computed with bresenham ray casting
-    for (x, y) in zip(occupied_x_grid_index, occupied_y_grid_index):
-
-        ray_cast = bresenham((robot_x, robot_y), (x, y))  # line form the lidar to the occupied point
-        for occupancy_point in ray_cast:
-            occupancy_map[occupancy_point[0]][occupancy_point[1]] = 0.0  # free area 0.0
-
-        extend_occupied(occupancy_map, x, y)
-
-    return occupancy_map
 
 robot = Supervisor()
-
-# Constants
-timestep = int(robot.getBasicTimeStep())
-dt = timestep / 1000.0  # ms
-A_MAX = 6.28  # rad/s
-V_MAX = 0.25  # m/s
-ACCEL_MAX = 2.00  # m/s^2
-L = 52  # mm
-D_THRESH = 0.01  # m
-A_THRESH = 0.005
-OG_RES = 0.02  # occupancy grid resolution
-MAP_SIZE = 8
-OCC_MAP_UPDATE_RATE = 20
-A_STAR_PATH_RECALC_RATE = 20
-goal_pos = [0.0, 1.0]  # Hardcoded goal, set to just the exit of the right-hand maze
+robotNode = robot.getFromDef("e-puck")
 
 # Init PIDS of for control signals
 vPID = PID(0.0, A_MAX, 0.6, 0.9, 0.02, 0.01)
 wPID = PID(0.0, A_MAX, 0.2, 0.05, 0.02, 0.01)
 
 # Init robot and sensors
+timestep = int(robot.getBasicTimeStep())
+dt = timestep / 1000.0
 camera = robot.getDevice('camera')
 gps = robot.getDevice("gps")
 compass = robot.getDevice("compass")
@@ -312,91 +34,88 @@ lidar.enable(timestep)
 gps.enable(timestep)  # For position
 compass.enable(timestep)  # For bearing
 camera.enable(timestep)
+camera.recognitionEnable(timestep)
 lidar.enablePointCloud()
 leftMotor = robot.getDevice('left wheel motor')
 rightMotor = robot.getDevice('right wheel motor')
 leftMotor.setPosition(float('inf'))
 rightMotor.setPosition(float('inf'))
+robot.step(timestep)  # Make initial step for
 
 
-if camera.hasRecognition():
-    camera.recognitionEnable(1)
-    camera.enableRecofnitionSegmentation()
-else:
-    print("Camera does not have recognition")
 
 
-def worldToOCCGrid(point, occ_map, map_size=8):
-    min_x, max_x = -map_size / 2, map_size / 2
-    min_y, max_y = -map_size / 2, map_size / 2
-    new_x = int(np.floor(np.round(map(point[0], min_x, max_x, 0, occ_map.shape[0] - 1))))
-    new_y = int(np.floor(np.round(map(point[1], min_y, max_y, 0, occ_map.shape[1] - 1))))
-    return new_x, new_y
 
-
-def OCCGridToWorld(point, occ_map, map_size=8):
-    min_x, max_x = -map_size / 2, map_size / 2
-    min_y, max_y = -map_size / 2, map_size / 2
-    new_x = map(point[0], 0, occ_map.shape[0] - 1, min_x, max_x)
-    new_y = map(point[1], 0, occ_map.shape[1] - 1, min_y, max_y)
-    return new_x, new_y
-
-
-def getPath(occ_map, robot_pos, goal_pos):
+def get_path(occ_map, robot_pos, goal_pos, print_map=False):
     # start and goal position
-    rx, ry = worldToOCCGrid(robot_pos, occ_map, MAP_SIZE)
-    gx, gy = worldToOCCGrid(goal_pos, occ_map, MAP_SIZE)
-    a_star = AStar(occ_map)
+    pmap = occ_map.get_map()
+    rx, ry = occ_map.world_to_grid(robot_pos)
+    gx, gy = occ_map.world_to_gridz(goal_pos)
+    a_star = AStar(pmap)
     path = a_star.get_path(rx, ry, gx, gy)
     path.reverse()
     path_converted = []
     for point in path:
-        path_converted.append(OCCGridToWorld(point, occ_map, MAP_SIZE))
-    return path_converted, path
+        path_converted.append(occ_map.grid_to_world(point))
+
+    if print_map:
+        occ_map.print_path(path_converted)
+
+    return path_converted, path, pmap
+
+def get_robot_and_global_positions(robot, landmarks):
+
+    landmark_robot_positions = []
+    landmark_global_positions = []
+
+    for landmark in landmarks:
+        landmark_wrt_robot = robot.getFromId(landmark.get_id())
+        landmark_global_positions.append(landmark_wrt_robot.getPosition())
+        r_l_p = landmark_wrt_robot.getPose(robot.getFromDef("e-puck"))
+        r_l_p = np.array(r_l_p).reshape((4, 4))[:, -1]
+        landmark_robot_positions.append(r_l_p[:-1])
+
+    return np.array(landmark_robot_positions), np.array(landmark_global_positions)
 
 
-def print_path(path, occ_map):
-    for x, y in path:
-        occ_map[int(x)][int(y)] = 2
+def detect_landmarks_3D_camera(cam, camera_resolution, camera_fov):
+    '''
+        Simulates 3d camera.
 
-    printOccupancyMap(occ_map)
+        Returns camera center-points, distance to center of object,
+        and 3D POS of detected object relative to camera.
+    '''
+    detected_objects = cam.getRecognitionObjects()
+    center_points = []
+    camera_positions = []
+    distances = []
+    w, h = camera_resolution
+    f = (1 / (2 * math.tan(camera_fov * 0.5) / w))  # Focal length
 
-
-# TODO:: Don't do this... Instead use log odd and inverse sensor model update
-def basic_occ_map_merge(pmapOld, pmapNew):
-    updated = []
-    for oldRow, newRow in zip(pmapOld, pmapNew):
-        tmp = []
-        for old, new in zip(oldRow, newRow):
-            if new == 1.0:
-                tmp.append(new)
-            elif new == 0.0:
-                tmp.append(new)
-            else:
-                tmp.append(old)
-        updated.append(tmp)
-    return np.array(updated)
+    for obj in detected_objects:
 
 
-def update_occupancy_map(l, pmap_old, position_cur, orientation_cur):
-    #  Visualize robots current surroundings in global frame
-    ang, dist = get_lidar_readings(l)
-    ox = np.sin(ang) * dist
-    oy = np.cos(ang) * dist
-    lidar_local = np.array([[x, y] for x, y in zip(ox, oy)])
-    lidar_global = transform_points_to_frame(orientation_cur, position_cur, lidar_local)
-    lidar_global = np.clip(lidar_global, -MAP_SIZE / 2,
-                           MAP_SIZE / 2)  # For some reason lidar continues past bounds of arena
-    # printLidar((0, 0), lidar_local[:, 0], lidar_local[:, 1]) # Print local view of points
-    # printLidar(position_cur, lidar_global[:, 0], lidar_global[:, 1]) # Print global view of points
+        # TODO: These values would be derived from a 3d camera.
+        u, v = obj.get_position_on_image()
+        tmp = obj.get_position()
+        dist = np.sqrt(np.sum(np.square(tmp)))
 
-    pmap_uncorrected = generate_occupancy_map(position_cur, lidar_global[:, 0], lidar_global[:, 1], OG_RES)
-    pmap_corrected = pmap_uncorrected
-    pmap_new = basic_occ_map_merge(pmap_old, pmap_corrected)
-    return pmap_new
+        # https://stackoverflow.com/questions/68638009/compute-3d-point-from-2d-point-on-camera-and-its-distance-from-camera
+        X = ((f * dist) / np.sqrt((u - w / 2) ** 2 + (v - h / 2) ** 2 + f ** 2))
+        Y = -X / f * (u - w / 2)
+        Z = -X / f * (v - h / 2)
+        C_POS_L = [X, Y, Z]
+        center_points.append([u, v])
+        camera_positions.append(C_POS_L)
+        distances.append(dist)
+
+    return center_points, camera_positions, distances, detected_objects
 
 
 def crash_detection(lidar, fov=(45, 135), threshold=0.1):
+    '''
+    Uses lidar object to detect obstacles closer than threshold within specified FOV
+    '''
     ang, dist = get_lidar_readings(lidar)
     for a, d in zip(ang, dist):
         if fov[0] <= np.degrees(a) <= fov[1]:
@@ -407,9 +126,119 @@ def crash_detection(lidar, fov=(45, 135), threshold=0.1):
     return False
 
 
-# Main loop
-occ_map_shape = (int(MAP_SIZE / OG_RES), int(MAP_SIZE / OG_RES))
-pmap = np.zeros(occ_map_shape) + 0.5
+# Robot's orientation with global north
+def get_bearing_in_degrees(comp):
+    '''
+    Uses compass object to get global bearing (relative to Global North) in radians
+    '''
+    cx, cy, _ = comp.getValues()
+    rad = np.arctan2(cy, cx)
+    b = (rad - 1.5708) / math.pi * 180.0
+    if b < 0.0:
+        b = b + 360.0
+    return b
+
+
+# NOTE: Use this for a reference location
+def robot_state_ground_truth():
+    global_position = np.array(gps.getValues())
+    global_bearing = np.radians(get_bearing_in_degrees(compass))
+    return global_position, global_bearing
+
+# Init Covariance matrices
+Sigma_m = np.array([[STD_M**2, 0], [0, STD_M**2]])
+Sigma_n = np.array([[STD_N[0]**2, 0], [0, STD_N[1]**2]])
+
+
+# Init state vector
+landmarks = []
+
+# Camera params
+# camera_matrix, distortion_coefficients, rotation_vectors, translation_vectors, new_camera_matrix, roi = calibrate_camera()
+camera_fov = camera.getFov()
+camera_resolution = np.array([camera.getWidth(), camera.getHeight()])
+
+# Other program variables
+count = 0
+v = .06
+omega = 0
+goal_pos = [0.0, 1.0]  # Hardcoded goal for now
+u = np.array([v, omega])
+pos_robot, bearing = robot_state_ground_truth()
+agent = EKF_Agent([*pos_robot, bearing], max_landmarks=NUM_LANDMARKS)
+
+# occ_map = OccupancyMap(MAP_SIZE, OG_RES)
+# readings = get_lidar_readings(lidar)
+# occ_map.update(readings, pos_robot[0:2], bearing)
+while robot.step(timestep) != -1:
+    leftMotor.setVelocity(v / WHEEL_RADIUS)
+    rightMotor.setVelocity(v / WHEEL_RADIUS)
+    x_hat_t, Sigma_x_t = agent.propagate(u, Sigma_n, dt)
+
+    if count % UPDATE_FREQ == 0:
+        landmark_center_points, landmark_camera_positions, landmark_distances, detected_objects = detect_landmarks_3D_camera(camera, camera_resolution, camera_fov)
+        all_z = []
+        all_w_pos_l = []
+
+        for lp in landmark_camera_positions:
+            C_POS_L = np.array(lp + [1])
+
+            # Current Rotation and POS of Robot
+            W_POS_R = robotNode.getPosition()
+            G_ROT_R, _ = cv2.Rodrigues(np.array([0, 0, -bearing]))   # G_ROT_R = np.reshape(robotNode.getOrientation(), (3, 3))  /* For reference */
+            Identity = np.eye(3)
+
+            # Define Baseline Transforms
+            W_T_R = T(G_ROT_R, W_POS_R)
+            R_T_C = T(Identity, R_POS_C[:-1])
+            W_T_C = W_T_R @ R_T_C
+
+            # For Sanity checks
+            # C_POS_L_TEST1 = I(R_T_C) @ I(W_T_R) @ W_POS_L
+            # C_POS_L_TEST2 = I(W_T_C) @ W_POS_L
+            # W_POS_C_TEST = W_T_R @ R_POS_C
+
+            W_POS_L = W_T_C @ C_POS_L
+            R_POS_L = I(W_T_R) @ W_POS_L
+            # measurements.append(np.expand_dims(R_POS_L[:2], axis=-1))
+
+        landmark_robot_positions, landmark_global_positions = get_robot_and_global_positions(robot, detected_objects)
+        for r_pos_l, w_pos_l in zip(landmark_robot_positions, landmark_global_positions):
+            all_z.append(r_pos_l)
+            all_w_pos_l.append(w_pos_l)
+
+        x_hat_t, Sigma_x_t = agent.update(all_z, all_w_pos_l)
+
+        G_p_r = robot.getFromDef("e-puck").getPosition()
+        G_ori_r = robot.getFromDef("e-puck").getOrientation()
+        print("---Estimated---")
+        print(x_hat_t[0], x_hat_t[1], x_hat_t[2])
+        print("---Actual---")
+        print(G_p_r[0], G_p_r[1], bearing)
+    count += 1
+    # Get Lines at this timestep
+    # Currently plotting every timestep (remove or plot less frequently)
+    # lines = findLines(np.array(lidar.getRangeImage()), lidar.getMaxRange())
+    # pass
+
+    '''
+            # Detection via hough line algorithm
+            tmpMap = OccupancyMap(MAP_SIZE, OG_RES)
+            tmpMap.update(readings, x_hat_t[0:2], x_hat_t[2])
+            tmpPmap = tmpMap.get_map() 
+            lines = hough_line_detection_image(tmpPmap, plot_lines=True)
+            measurements = []
+            if len(lines):
+                for r, theta in lines:
+                    x, y = polarToCart(r, theta)
+                    shape = occ_map.shape
+                    perpendicular_line = np.array(occ_map.grid_to_world((x + (shape[0] / 2), y + (shape[1] / 2))))
+                    measurements.append(np.expand_dims(perpendicular_line, axis=-1))
+    '''
+
+'''
+occ_map = OccupancyMap(MAP_SIZE, OG_RES)
+
 num_steps = 0
 e_stop = False
 while robot.step(timestep) != -1:
@@ -417,19 +246,16 @@ while robot.step(timestep) != -1:
 
     # Init empty occupancy map and robot state
     pos_robot, bearing = robot_state_ground_truth()
-    pmap = update_occupancy_map(lidar, pmap, pos_robot, bearing)
+    readings = get_lidar_readings(lidar)
+    occ_map.update(readings, pos_robot, bearing)
 
     # Now iterate through every point
-    path, occ_points = getPath(pmap, pos_robot, goal_pos)
-    print_path(occ_points, pmap.copy())
+    path, occ_points, pmap = get_path(occ_map, pos_robot, goal_pos)
 
     # Skip the first node in path (it's just the current robots position). If path is real long, use every other point.
     # TODO: Makes point skip dynamic
     path = path[1:] if len(path) > 15 else path[1:-1:5]
     for point in path:
-
-        # if num_steps % A_STAR_PATH_RECALC_RATE == 0:
-        #     break
 
         # Forcefully halt and recalculate path if we are about to crash
         # However, don't halt if already halted previously. Give the robot a chance to move first.
@@ -448,18 +274,18 @@ while robot.step(timestep) != -1:
         d_pos = np.Infinity
         d_theta = np.Infinity
 
-        print_path(occ_points, pmap.copy())
-
         # Keep moving until we have reached destination
         while abs(d_pos) > D_THRESH and robot.step(timestep) != -1:
+            pos_robot, bearing = robot_state_ground_truth()
             num_steps += 1
 
             # Update occ_map every n steps
             if num_steps % OCC_MAP_UPDATE_RATE == 0:
-                pmap = update_occupancy_map(lidar, pmap, pos_robot, bearing)
+                readings = get_lidar_readings(lidar)
+                occ_map.update(readings, pos_robot, bearing)
+                pmap = occ_map.get_map()
 
             # Compute the error
-            pos_robot, bearing = robot_state_ground_truth()
             d_pos = distance(np.array(pos_robot), np.array(point))  # distance to target
             d_theta = angle_to(  # angle to target
                 np.array(pos_robot),
@@ -488,4 +314,6 @@ while robot.step(timestep) != -1:
     stop_robot()
     vPID.reset()
     wPID.reset()
+'''
+
 

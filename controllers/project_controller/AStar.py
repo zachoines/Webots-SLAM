@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from utility import bresenham
 
 class AStar:
 
@@ -157,7 +158,7 @@ class AStar:
         :return: boolean indicating if the robot will crash into something on the way to the goal
         '''
 
-        ray_cast = self.bresenham((n1['x'], n1['y']), (n2['x'], n2['y']))
+        ray_cast = bresenham((n1['x'], n1['y']), (n2['x'], n2['y']))
         # Overly redundant point checking
         # TODO: Makes point skip dynamic
         ray_cast = ray_cast[0: -1: 3] if len(ray_cast) > 10 else ray_cast
@@ -190,63 +191,3 @@ class AStar:
             return False
         else:
             return True
-
-    def bresenham(self, current, target):
-        """
-        Bresenham's Line Algorithm
-        wikipedia.org/wiki/Bresenham's_line_algorithm
-        https://www.geeksforgeeks.org/bresenhams-line-generation-algorithm/
-        """
-
-        swap = False
-        steep = False
-        pixel_step = 1
-        start, end = current, target
-
-        def delta(t1, t2):
-            x1, y1 = t2
-            x2, y2 = t1
-            return (x2 - x1, y2 - y1)
-
-        def swap_tuple(t1, t2):
-            tmp = t1
-            t1 = t2
-            t2 = tmp
-            return t1, t2
-
-        def reverse(t):
-            return t[::-1]
-
-        def check_steep(t1, t2):
-            diff = delta(t1, t2)
-            return abs(diff[1]) > abs(diff[0])
-
-        # If the line is very steep, then rotate it and build up the intersecting points in reverse
-        if check_steep(end, start):
-            steep = True
-            start = reverse(start)
-            end = reverse(end)
-
-        # Swap if needed
-        if start[0] > end[0]:
-            start, end = swap_tuple(start, end)
-            swap = True
-
-        # iterate over bounding box generating points between start and end
-        all_points = []
-        diff = delta(end, start)
-        curr_err = np.floor(diff[0] / 2)
-        step = pixel_step if start[1] < end[1] else -pixel_step
-        y = start[1]
-        for x in range(start[0], end[0] + 1):
-            all_points.append((y, x) if steep else (x, y))
-            curr_err -= abs(diff[1])
-            if curr_err < 0:
-                y += step
-                curr_err += diff[0]
-
-        # Since we swapped points and build the line-up in reverse
-        if swap: all_points.reverse()
-        return np.array(all_points)
-
-
