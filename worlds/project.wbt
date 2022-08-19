@@ -2,12 +2,12 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.22244634550642756 -0.17500371119425034 0.9591096519371884 4.434423793127351
-  position 1.042553346521951 12.39908419294785 5.587011929249112
+  orientation -0.14673116934112357 -0.8100152208545162 0.5677546177071535 5.665509641774255
+  position -5.45921342478376 2.6031845444244337 2.4550566047720026
 }
 DEF e-puck Robot {
-  translation -1.92771 1.50491 0.01
-  rotation 0 0 -1 0.283133062043826
+  translation -1.92771 1.50491 0
+  rotation 0 0 -1 0.0213359
   children [
     DEF gps GPS {
     }
@@ -37,7 +37,7 @@ DEF e-puck Robot {
         }
       ]
       endPoint DEF EPUCK_LEFT_WHEEL Solid {
-        translation 0 0.02600000000000002 0.02
+        translation 0 0.02600000000000004 0.02
         rotation 0 1 0 0
         children [
           DEF EPUCK_WHEEL Transform {
@@ -189,7 +189,7 @@ DEF e-puck Robot {
         }
       ]
       endPoint DEF EPUCK_RIGHT_WHEEL Solid {
-        translation 0 -0.025999999999999964 0.02
+        translation 0 -0.025999999999999978 0.02
         rotation 0 1 0 0
         children [
           Transform {
@@ -2119,7 +2119,7 @@ RectangleArena {
   floorTileSize 4 4
 }
 DEF landmark1 Solid {
-  translation -0.26 1.59 0.12
+  translation -0.26 1.92 0.12
   scale 0.5 0.5 0.5
   children [
     Shape {

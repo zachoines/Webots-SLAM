@@ -15,7 +15,7 @@ class EKF_Agent:
 
         # Covariance matrices
         self.sigma_x_t = np.eye(self.full_state_size)
-        all_cov = res_list = [STD_X[i] * STD_X[i] for i in range(len(STD_X))] + [STD_L**2 for _ in range(self.landmark_state_size)]
+        all_cov = [STD_X[i] * STD_X[i] for i in range(len(STD_X))] + [STD_L**2 for _ in range(self.landmark_state_size)]
         self.sigma_x_t[np.diag_indices(self.full_state_size)] = all_cov
         self.sigma_m = np.eye(3) * (STD_M**2)
 
@@ -99,7 +99,7 @@ class EKF_Agent:
         self._track_landmarks(all_g_pos_l)
         theta = self.x_hat_t[ROBOT_STATE["THETA"]]
         g_p_r = self.x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"] + 1]
-        g_rot_r, _ = cv2.Rodrigues(np.array([0, 0, -theta]))
+        g_rot_r, _ = cv2.Rodrigues(np.array([0, 0, theta]))
         r_pos_l = [g_rot_r.T @ (g_pos_l - g_p_r) for g_pos_l in all_g_pos_l]
 
         return np.array(r_pos_l)
@@ -112,17 +112,17 @@ class EKF_Agent:
             [[x2 - x1],[ y2 - y1], [z2 - z1], []]
 
             Help-full References:
-            https://www.wolframalpha.com/input?i=dot+product&assumption=%7B%22C%22%2C+%22dot+product%22%7D+-%3E+%7B%22Calculator%22%7D&assumption=%7B%22F%22%2C+%22DotProduct%22%2C+%22dotVector1%22%7D+-%3E%22transpose%28%5B%5Bcos%28-phi%29%2C+-sin%28-phi%29%2C+0%5D%2C+%5Bsin%28-phi%29%2C+cos%28-phi%29%2C+0%5D%2C+%5B0%2C+0%2C+1%5D%5D%29%22&assumption=%7B%22F%22%2C+%22DotProduct%22%2C+%22dotVector2%22%7D+-%3E%22%5B%5Bx2+-+x1%5D%2C%5B+y2+-+y1%5D%2C+%5Bz2+-+z1%5D%5D%22
-             H(z) = r_pos_l = Rot(-z).T @ (w_pos_l - w_pos_r) =
+            https://www.wolframalpha.com/input?i=dot+product&assumption=%7B%22C%22%2C+%22dot+product%22%7D+-%3E+%7B%22Calculator%22%7D&assumption=%7B%22F%22%2C+%22DotProduct%22%2C+%22dotVector1%22%7D+-%3E%22transpose%28%5B%5Bcos%28phi%29%2C+-sin%28phi%29%2C+0%5D%2C+%5Bsin%28phi%29%2C+cos%28phi%29%2C+0%5D%2C+%5B0%2C+0%2C+1%5D%5D%29%22&assumption=%7B%22F%22%2C+%22DotProduct%22%2C+%22dotVector2%22%7D+-%3E%22%5B%5Bx2+-+x1%5D%2C%5B+y2+-+y1%5D%2C+%5Bz2+-+z1%5D%5D%22
+             H(z) = r_pos_l = Rot(z).T @ (w_pos_l - w_pos_r) =
+
             [
-                (-x1 + x2) cos(ϕ) - (-y1 + y2) sin(ϕ),
-                (-y1 + y2) cos(ϕ) + (-x1 + x2) sin(ϕ),
-                -z1 + z2
+                (-x1 + x2) cos(ϕ) + (-y1 + y2) sin(ϕ),
+                (-y1 + y2) cos(ϕ) - (-x1 + x2) sin(ϕ),
+                 -z1 + z2
             ]
 
-            The Jacobian w.r.t to x:
-            https://www.wolframalpha.com/input?i=jacobian+of+%28%28-x1+%2B+x2%29+cos%28%CF%95%29+-+%28-y1+%2B+y2%29+sin%28%CF%95%29%2C+%28-y1+%2B+y2%29+cos%28%CF%95%29+%2B+%28-x1+%2B+x2%29+sin%28%CF%95%29%2C+-z1+%2B+z2+%29+with+respect+to+%28x1%2C+y1%2C+z1%2C+%CF%95%2C+x2%2C+y2%2C+z3%29%29
-
+        The Jacobian w.r.t to x:
+            https://www.wolframalpha.com/input?i=jacobian+of+%28%28-x1+%2B+x2%29+cos%28%CF%95%29+%2B+%28-y1+%2B+y2%29+sin%28%CF%95%29%2C+%28-y1+%2B+y2%29+cos%28%CF%95%29+-+%28-x1+%2B+x2%29+sin%28%CF%95%29%2C+-z1+%2B+z2%29+with+respect+to+%28x1%2C+y1%2C+z1%2C+%CF%95%2C+x2%2C+y2%2C+z3%29%29
         '''
 
 
@@ -133,14 +133,12 @@ class EKF_Agent:
         return np.squeeze(np.array(
             [
                 [
-                    [-np.cos(theta), np.sin(theta), 0, -((diff[1]) * np.cos(theta)) - (diff[0]) * np.sin(theta), np.cos(theta), -np.sin(theta), 0],
-                    [-np.sin(theta), -np.cos(theta), 0, (diff[0]) * np.cos(theta) - (diff[1]) * np.sin(theta), np.sin(theta), np.cos(theta), 0],
+                    [-np.cos(theta), -np.sin(theta), 0, diff[1] * np.cos(theta) - diff[0] * np.sin(theta), np.cos(theta), np.sin(theta), 0],
+                    [np.sin(theta), -np.cos(theta), 0, -diff[0] * np.cos(theta) - diff[1] * np.sin(theta), -np.sin(theta), np.cos(theta), 0],
                     [0, 0, -1, 0, 0, 0, 0]
                 ] for diff in diffs
             ]
         ))
-
-
 
     def _Q(self, std_n=0):
         '''
@@ -175,9 +173,9 @@ class EKF_Agent:
 
         self.x_hat_t = self.x_hat_t + K_t @ r_t
 
-        # self.sigma_x_t = self.sigma_x_t - K_t @ H_t @ self.sigma_x_t  # Pg. 97
+        self.sigma_x_t = self.sigma_x_t - K_t @ H_t @ self.sigma_x_t  # Pg. 97
 
-        self.sigma_x_t = self.sigma_x_t - K_t @ S_t @ K_t.T  # Pg. 130
+        # self.sigma_x_t = self.sigma_x_t - K_t @ S_t @ K_t.T  # Pg. 130
 
         return self.x_hat_t, self.sigma_x_t
 

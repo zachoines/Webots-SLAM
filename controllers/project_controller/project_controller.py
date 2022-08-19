@@ -141,12 +141,13 @@ def get_bearing_in_degrees(comp):
 
 # NOTE: Use this for a reference location
 def robot_state_ground_truth():
-    global_position = np.array(gps.getValues())
-    global_bearing = np.radians(get_bearing_in_degrees(compass))
+    # global_position = np.array(gps.getValues())
+    # global_bearing = np.radians(get_bearing_in_degrees(compass))
+    global_position = robot.getFromDef("e-puck").getPosition()
+    global_bearing = robot.getFromDef("e-puck").getOrientation()[1]
     return global_position, global_bearing
 
 # Init Covariance matrices
-Sigma_m = np.array([[STD_M**2, 0], [0, STD_M**2]])
 Sigma_n = np.array([[STD_N[0]**2, 0], [0, STD_N[1]**2]])
 
 
@@ -161,18 +162,26 @@ camera_resolution = np.array([camera.getWidth(), camera.getHeight()])
 # Other program variables
 count = 0
 v = .06
-omega = 0
+omega = 0.1
 goal_pos = [0.0, 1.0]  # Hardcoded goal for now
 u = np.array([v, omega])
 pos_robot, bearing = robot_state_ground_truth()
 agent = EKF_Agent([*pos_robot, bearing], max_landmarks=NUM_LANDMARKS)
 
+def omega_to_wheel_speeds(omega, v):
+    wd = omega * 0.0568 * 0.5
+    return v - wd, v + wd
+
+
 # occ_map = OccupancyMap(MAP_SIZE, OG_RES)
 # readings = get_lidar_readings(lidar)
 # occ_map.update(readings, pos_robot[0:2], bearing)
 while robot.step(timestep) != -1:
-    leftMotor.setVelocity(v / WHEEL_RADIUS)
-    rightMotor.setVelocity(v / WHEEL_RADIUS)
+
+    left_v, right_v = omega_to_wheel_speeds(omega, v)
+    leftMotor.setVelocity(left_v / WHEEL_RADIUS)
+    rightMotor.setVelocity(right_v / WHEEL_RADIUS)
+
     x_hat_t, Sigma_x_t = agent.propagate(u, Sigma_n, dt)
 
     if count % UPDATE_FREQ == 0:
@@ -185,7 +194,9 @@ while robot.step(timestep) != -1:
 
             # Current Rotation and POS of Robot
             W_POS_R = robotNode.getPosition()
-            G_ROT_R, _ = cv2.Rodrigues(np.array([0, 0, -bearing]))   # G_ROT_R = np.reshape(robotNode.getOrientation(), (3, 3))  /* For reference */
+            G_ROT_R, _ = cv2.Rodrigues(np.array([0, 0, bearing]))
+            test = rot_mat(bearing)
+            # G_ROT_R = np.reshape(robotNode.getOrientation(), (3, 3))  /* For reference */
             Identity = np.eye(3)
 
             # Define Baseline Transforms
@@ -200,6 +211,7 @@ while robot.step(timestep) != -1:
 
             W_POS_L = W_T_C @ C_POS_L
             R_POS_L = I(W_T_R) @ W_POS_L
+            hello = "world"
             # measurements.append(np.expand_dims(R_POS_L[:2], axis=-1))
 
         landmark_robot_positions, landmark_global_positions = get_robot_and_global_positions(robot, detected_objects)
@@ -209,12 +221,12 @@ while robot.step(timestep) != -1:
 
         x_hat_t, Sigma_x_t = agent.update(all_z, all_w_pos_l)
 
-        G_p_r = robot.getFromDef("e-puck").getPosition()
-        G_ori_r = robot.getFromDef("e-puck").getOrientation()
-        print("---Estimated---")
-        print(x_hat_t[0], x_hat_t[1], x_hat_t[2])
+        print("---Estimated---:")
+        print(x_hat_t[0], x_hat_t[1], x_hat_t[2], x_hat_t[3])
         print("---Actual---")
-        print(G_p_r[0], G_p_r[1], bearing)
+        pos_robot, bearing = robot_state_ground_truth()
+        print(pos_robot[0], pos_robot[1], pos_robot[2], bearing)
+        cat = "meow"
     count += 1
     # Get Lines at this timestep
     # Currently plotting every timestep (remove or plot less frequently)
