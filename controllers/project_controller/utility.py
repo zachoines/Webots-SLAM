@@ -4,6 +4,11 @@ import matplotlib.pyplot as plt
 
 
 # Euclidean distance
+
+def flatten_list(regular_list):
+    return [item for sublist in regular_list for item in sublist]
+
+
 def distance(a, b):
     return np.sum(np.square(a - b))
 

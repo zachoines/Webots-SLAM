@@ -2,6 +2,10 @@ import numpy as np
 import math
 
 
+def distance(a, b):
+    return np.linalg.norm(a - b)
+
+
 def normalize(v):
     return v / np.sqrt(np.sum(v ** 2))
 

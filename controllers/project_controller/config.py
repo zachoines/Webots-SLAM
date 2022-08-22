@@ -27,14 +27,16 @@ OCC_MAP_UPDATE_RATE = 20
 A_STAR_PATH_RECALC_RATE = 20
 W_POS_L = [-0.26, 1.59, .12, 1]
 R_POS_C = [0.03, 0.0, 0.028, 1]
-NUM_LANDMARKS = 1
-WHEEL_RADIUS = 0.020
-UPDATE_FREQ = 5
+NUM_LANDMARKS = 3
+UPDATE_FREQ = 1
 LANDMARK_STATE_SIZE = 3
+# https://cyberbotics.com/doc/guide/epuck
+WHEEL_RADIUS = 0.020  # 0.020
+AXLE_LENGTH = 0.0568  # 0.0568 0.043
 
 
 # Noise Covariance
 STD_M = 0.001  # measurements
-STD_N = [0.001, np.pi / 600]  # control signal
-STD_X = [0.001, 0.001, 0.001, np.pi / 900]
-STD_L = 0.001
+STD_N = [0.001, np.pi / 100]  # control signal
+STD_X = [0.001, 0.001, 0.001, np.pi / 100] # robot state
+STD_L = 0.001  # landmark state

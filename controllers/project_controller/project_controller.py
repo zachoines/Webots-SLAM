@@ -147,10 +147,6 @@ def robot_state_ground_truth():
     global_bearing = robot.getFromDef("e-puck").getOrientation()[1]
     return global_position, global_bearing
 
-# Init Covariance matrices
-Sigma_n = np.array([[STD_N[0]**2, 0], [0, STD_N[1]**2]])
-
-
 # Init state vector
 landmarks = []
 
@@ -161,16 +157,15 @@ camera_resolution = np.array([camera.getWidth(), camera.getHeight()])
 
 # Other program variables
 count = 0
-v = .06
-omega = 0.1
+v = .03
+omega = 0.015
 goal_pos = [0.0, 1.0]  # Hardcoded goal for now
 u = np.array([v, omega])
-pos_robot, bearing = robot_state_ground_truth()
-agent = EKF_Agent([*pos_robot, bearing], max_landmarks=NUM_LANDMARKS)
+agent = None
 
 def omega_to_wheel_speeds(omega, v):
-    wd = omega * 0.0568 * 0.5
-    return v - wd, v + wd
+    wd = omega * AXLE_LENGTH * 0.5
+    return (v - wd) / WHEEL_RADIUS, (v + wd) / WHEEL_RADIUS
 
 
 # occ_map = OccupancyMap(MAP_SIZE, OG_RES)
@@ -178,11 +173,18 @@ def omega_to_wheel_speeds(omega, v):
 # occ_map.update(readings, pos_robot[0:2], bearing)
 while robot.step(timestep) != -1:
 
-    left_v, right_v = omega_to_wheel_speeds(omega, v)
-    leftMotor.setVelocity(left_v / WHEEL_RADIUS)
-    rightMotor.setVelocity(right_v / WHEEL_RADIUS)
+    # if count % 200 == 0:
+    #     omega *= -1
 
-    x_hat_t, Sigma_x_t = agent.propagate(u, Sigma_n, dt)
+    if count < 1:
+        pos_robot, bearing = robot_state_ground_truth()
+        agent = EKF_Agent([*pos_robot, abs(bearing)], max_landmarks=NUM_LANDMARKS)
+
+    left_v, right_v = omega_to_wheel_speeds(omega, v)
+    leftMotor.setVelocity(left_v)
+    rightMotor.setVelocity(right_v)
+
+    x_hat_t, Sigma_x_t = agent.propagate(u, dt)
 
     if count % UPDATE_FREQ == 0:
         landmark_center_points, landmark_camera_positions, landmark_distances, detected_objects = detect_landmarks_3D_camera(camera, camera_resolution, camera_fov)
@@ -221,11 +223,11 @@ while robot.step(timestep) != -1:
 
         x_hat_t, Sigma_x_t = agent.update(all_z, all_w_pos_l)
 
-        print("---Estimated---:")
-        print(x_hat_t[0], x_hat_t[1], x_hat_t[2], x_hat_t[3])
-        print("---Actual---")
+        print("Estimated X : [%8.8f, %8.8f, %8.8f, %8.8f]: Estimated landmark 1: [%8.8f, %8.8f, %8.8f]" % tuple(x_hat_t[0:7]))
         pos_robot, bearing = robot_state_ground_truth()
-        print(pos_robot[0], pos_robot[1], pos_robot[2], bearing)
+        all_w_pos_l = all_w_pos_l[0]
+
+        print("Actual X : [%8.8f, %8.8f, %8.8f, %8.8f]: Actual landmark 1: [%8.8f, %8.8f, %8.8f]" % (pos_robot[0], pos_robot[1], pos_robot[2], abs(bearing), all_w_pos_l[0], all_w_pos_l[1], all_w_pos_l[2]))
         cat = "meow"
     count += 1
     # Get Lines at this timestep
