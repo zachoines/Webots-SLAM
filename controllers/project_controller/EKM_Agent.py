@@ -5,7 +5,7 @@ from utility import flatten_list
 from vector import distance
 
 class EKF_Agent:
-    def __init__(self, initial_x, max_landmarks=1):
+    def __init__(self, initial_x, max_landmarks):
         self.max_landmarks = max_landmarks
         self.landmark_state_size = self.max_landmarks * 3  # 3 -- [x, y, z] of landmark
         self.full_state_size = ROBOT_STATE['SIZE'] + self.landmark_state_size
@@ -21,14 +21,8 @@ class EKF_Agent:
         self.sigma_x_t[np.diag_indices(self.full_state_size)] = all_cov
         self.sigma_m = np.eye(3 * NUM_LANDMARKS) * (STD_M**2)
         self.sigma_n = np.array([[STD_N[0]**2, 0], [0, STD_N[1]**2]])
+        self.landmarks_track_count = np.zeros((NUM_LANDMARKS))
 
-    def rot_mat(self, theta):
-        c, s = math.cos(theta), math.sin(theta)
-        return np.array([
-            [c, -s, 0],
-            [s, c, 0],
-            [0, 0, 1]]
-        )
 
     def _f(self, U, dt):
         '''
@@ -82,34 +76,91 @@ class EKF_Agent:
 
         return self.g
 
-    def _track_landmarks(self, g_pos_l):
+    def _equal(self, l1, l2):
+        return np.alltrue(np.equal(np.array(l1), np.array(l2)))
+
+    def _list_null(self, l):
+        return self._equal(l, [0., 0., 0.])
+
+    def _update_covs(self, index, std):
+        pass
+
+    def _align_landmarks_and_measurements(self, previous_landmarks, new_landmarks, new_measurements, y=0.1, stale_thresh=20):
+        updated_landmarks = []
+        updated_measurements = []
+        previous_landmarks = np.array(previous_landmarks).tolist()
+        new_landmarks = np.array(new_landmarks).tolist()
+        new_measurements = np.array(new_measurements).tolist()
+        for i, l1 in enumerate(previous_landmarks):
+            count = len(new_landmarks)
+            null = self._list_null(l1)
+            best = (np.Infinity, None, None, False)
+
+            # Case where we can simply add the new landmark
+            if null and count > 0:
+                updated_landmarks.append(new_landmarks[0])
+                updated_measurements.append(new_measurements[0])
+                new_landmarks.remove(new_landmarks[0])
+                new_measurements.remove(new_measurements[0])
+                continue
+
+            # There are no detected lanmarks
+            if count <= 0:
+                updated_landmarks.append(l1)
+                updated_measurements.append([0, 0, 0])
+                continue
+
+            # Find closest landmark
+            elif not null:
+                for l2, m in zip(new_landmarks, new_measurements):
+                    dist = distance(np.array(l1), np.array(l2))
+
+                    # We found the landmark again
+                    if dist < best[0]:
+                        best = (dist, l2, m, True)
+
+            dist, landmark, measurement, found = best
+
+            # Case where we can replace old landmark
+            if found and dist >= y and self.landmarks_track_count[i] >= stale_thresh:
+                self.landmarks_track_count[i] = 0
+                self._update_covs(i, np.Infinity)
+                updated_landmarks.append(landmark)
+                updated_measurements.append(measurement)
+                new_landmarks.remove(landmark)
+                new_measurements.remove(measurement)
+
+            elif found and dist >= y and self.landmarks_track_count[i] >= stale_thresh:
+                pass
+
+            # Case where we found previous landmark
+            elif found and dist < y:
+                self.landmarks_track_count[i] = 0
+                updated_landmarks.append(landmark)
+                updated_measurements.append(measurement)
+                new_landmarks.remove(landmark)
+                new_measurements.remove(measurement)
+
+            # Case where landmark is out of sight
+            else:
+                pass # Dont know what to do in this case
+
+
+        if len(updated_landmarks) < NUM_LANDMARKS:
+            cat = "meow"
+        return np.array(updated_landmarks), np.array(updated_measurements)
+
+
+    def _update_landmarks(self, z_t, g_p_l):
         # NOTE: Simply use euclidean distance to track landmarks for now
         # TODO:: Need to devise a better way too track landmarks across frames here
-        landmarks = []
-        current_landmarks = np.array_split(np.array(self.x_hat_t[ROBOT_STATE["THETA"]+1:]), NUM_LANDMARKS)
-        detected_landmarks = g_pos_l.copy()
-        for l1 in current_landmarks:
-            is_null = np.alltrue(np.equal(l1, [0., 0., 0.]))
-            best = (np.Infinity, [], -1)
-            if not is_null:
-                for l2, i in zip(detected_landmarks, range(len(detected_landmarks))):
-                    dist = distance(l1, np.array(l2))
-                    if dist < best[0]:
-                        best = (dist, l2, i)
-
-            dist, landmark, index = best
-
-
-            if is_null and len(detected_landmarks) > 0:
-                landmarks += list(detected_landmarks[0])
-                detected_landmarks.remove(detected_landmarks[0])
-            elif len(landmark) > 0:
-                landmarks += list(landmark)
-                detected_landmarks.remove(landmark)
-            else:
-                landmarks += [0.0, 0.0, 0.0]
-
-        self.x_hat_t[ROBOT_STATE["THETA"]+1:] = landmarks
+        g_p_l, z_t = self._align_landmarks_and_measurements(
+            np.array_split(np.array(self.x_hat_t[ROBOT_STATE["THETA"] + 1:]), NUM_LANDMARKS),
+            g_p_l,
+            z_t
+        )
+        self.x_hat_t[ROBOT_STATE["THETA"]+1:] = np.array(g_p_l).flatten()
+        return z_t, g_p_l
 
     def _h(self, all_g_pos_l):
         '''
@@ -117,7 +168,6 @@ class EKF_Agent:
         with respect to the robot's local frame.
         Pg. 115 of Stergios notes.
         '''
-        self._track_landmarks(all_g_pos_l)
         theta = self.x_hat_t[ROBOT_STATE["THETA"]]
         g_p_r = self.x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"] + 1]
         g_rot_r, _ = cv2.Rodrigues(np.array([0, 0, theta]))
@@ -173,6 +223,8 @@ class EKF_Agent:
             g_p_l -- landmarks' global positions
         '''
 
+        z_t, g_p_l = self._update_landmarks(z_t, g_p_l)
+
         z_hat_t = self._h(g_p_l)
 
         r_t = np.squeeze(z_t - z_hat_t).flatten()
@@ -180,11 +232,8 @@ class EKF_Agent:
         H_t = self._H(g_p_l)
 
         S_t = H_t @ self.sigma_x_t @ H_t.T + self.sigma_m
-        # S_t = H_t[:, :4] @ self.sigma_x_t[:4, :4] @ H_t[:, :4].T + H_t[:, 4:7] @ np.eye(3) @ H_t[:, 4:7].T + self.sigma_m
-
 
         K_t = self.sigma_x_t @ H_t.T @ np.linalg.inv(S_t)
-        # K_t = np.zeros(H_t.T.shape)[4:7, :] = np.eye(3) @ H_t[:, 4:7].T @ np.linalg.inv(S_t)
 
         self.x_hat_t = self.x_hat_t + K_t @ r_t
 

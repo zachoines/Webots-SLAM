@@ -2,12 +2,12 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation 0.007600129063956843 0.997729384290962 -0.06692020442727908 0.22630863254099623
-  position -8.104245900782194 2.0299664900358176 1.1160778140368903
+  orientation 0.03656617272897556 -0.9243574903968441 -0.3797711744711584 6.075528651477977
+  position -2.736066206970698 1.9540037627500406 0.6386878674686031
 }
 DEF e-puck Robot {
-  translation -1.91925 1.9049 0
-  rotation 0 0 -1 0.0213359
+  translation -0.0142927 1.63433 0.001
+  rotation 0 0 -1 0.02133589999999584
   children [
     DEF gps GPS {
     }
@@ -37,7 +37,7 @@ DEF e-puck Robot {
         }
       ]
       endPoint DEF EPUCK_LEFT_WHEEL Solid {
-        translation 0 0.02600000000000004 0.02
+        translation 0 0.026000000000000034 0.02
         rotation 0 1 0 0
         children [
           DEF EPUCK_WHEEL Transform {
@@ -189,7 +189,7 @@ DEF e-puck Robot {
         }
       ]
       endPoint DEF EPUCK_RIGHT_WHEEL Solid {
-        translation 0 -0.025999999999999992 0.02
+        translation 0 -0.025999999999999957 0.02
         rotation 0 1 0 0
         children [
           Transform {
@@ -2119,7 +2119,7 @@ RectangleArena {
   floorTileSize 4 4
 }
 DEF landmark1 Solid {
-  translation 0.65 1.92 0.12
+  translation 2.85 1.92 0.12
   scale 0.5 0.5 0.5
   children [
     Shape {
@@ -2136,7 +2136,7 @@ DEF landmark1 Solid {
   ]
 }
 DEF landmark2 Solid {
-  translation 0 2.23 0.34
+  translation 2.58 -0.38 0.34
   scale 0.5 0.5 0.5
   children [
     Shape {
@@ -2153,7 +2153,7 @@ DEF landmark2 Solid {
   ]
 }
 DEF landmark3 Solid {
-  translation 0.44 -0.56 0.12
+  translation 2.7 2.47 0.12
   scale 0.5 0.5 0.5
   children [
     Shape {
@@ -2170,7 +2170,7 @@ DEF landmark3 Solid {
   ]
 }
 DEF landmark4 Solid {
-  translation 0.76 2.26 0.12
+  translation 2.79 2.26 0.12
   scale 0.5 0.5 0.5
   children [
     Shape {
@@ -2187,7 +2187,7 @@ DEF landmark4 Solid {
   ]
 }
 DEF landmark5 Solid {
-  translation -0.44 -0.7 0.12
+  translation 3.55 0.61 0.21
   scale 0.5 0.5 0.5
   children [
     Shape {
@@ -2204,7 +2204,7 @@ DEF landmark5 Solid {
   ]
 }
 DEF landmark6 Solid {
-  translation 0.44 -0.7 0.12
+  translation 3.49 0.67 0.12
   scale 0.5 0.5 0.5
   children [
     Shape {

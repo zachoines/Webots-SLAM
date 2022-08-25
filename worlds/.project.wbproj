@@ -8,4 +8,4 @@ projectionMode: PERSPECTIVE
 orthographicViewHeight: 1.76859
 textFiles: -1
 consoles: Console:All:All
-renderingDevicePerspectives: e-puck:camera;1;0.262963;0;0
+renderingDevicePerspectives: e-puck:camera;1;0.300926;0.00349895;0

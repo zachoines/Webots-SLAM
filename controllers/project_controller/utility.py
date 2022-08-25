@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# Euclidean distance
+def to_tuple(regular_list):
+    return tuple(i for i in regular_list)
+
 
 def flatten_list(regular_list):
     return [item for sublist in regular_list for item in sublist]
