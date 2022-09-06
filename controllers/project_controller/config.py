@@ -1,6 +1,3 @@
-import math
-from matrix_transform import *
-from enum import Enum
 import numpy as np
 ROBOT_STATE = {
     "X": 0,
@@ -22,13 +19,13 @@ L = 52  # mm
 D_THRESH = 0.01  # m
 A_THRESH = 0.005
 OG_RES = 0.02  # occupancy grid resolution
-MAP_SIZE = 8
+MAP_BOUNDS = [[4, -4], [-4, 4]]  # (TL), (BR)
 OCC_MAP_UPDATE_RATE = 20
 A_STAR_PATH_RECALC_RATE = 20
 W_POS_L = [-0.26, 1.59, .12, 1]
 R_POS_C = [0.03, 0.0, 0.028, 1]
-NUM_LANDMARKS = 3
-UPDATE_FREQ = 1
+NUM_LANDMARKS = 4
+UPDATE_FREQ = 5
 LANDMARK_STATE_SIZE = 3
 # https://cyberbotics.com/doc/guide/epuck
 WHEEL_RADIUS = 0.020  # 0.020
@@ -36,7 +33,7 @@ AXLE_LENGTH = 0.0568  # 0.0568 0.043
 
 
 # Noise Covariance
-STD_M = 0.001  # measurements
+STD_M = [0.0001, 0.0001, 0.0001, np.pi / 600]  # measurements
 STD_N = [0.001, np.pi / 100]  # control signal
-STD_X = [0.001, 0.001, 0.001, np.pi / 100] # robot state
+STD_X = [0.0001, 0.0001, 0.0001, np.pi / 600] # robot state
 STD_L = 0.001  # landmark state

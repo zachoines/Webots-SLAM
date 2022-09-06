@@ -97,7 +97,8 @@ def get_bearing_in_degrees(comp):
     global_bearing = np.arctan2(cx, cy)
     return global_bearing
 
-def get_compass_and_gps_measures():
+
+def get_compass_and_gps_measures(gps, compass):
     global_position = np.array(gps.getValues())
     global_bearing = get_bearing_in_degrees(compass)
     return global_position, global_bearing
@@ -141,9 +142,14 @@ def detect_landmarks_3D_camera(cam, camera_resolution, camera_fov):
     return camera_positions, detected_objects
 
 
-def get_measurements():
-    global_position, global_bearing = get_compass_and_gps_measures()
+def get_measurements(gps, compass, camera):
+    # global_position, global_bearing = get_compass_and_gps_measures(gps, compass)
+    global_position, global_bearing = robot_state_ground_truth()
     landmark_camera_positions, detected_objects = detect_landmarks_3D_camera(camera, camera_resolution, camera_fov)
+
+    # Add Measurement noise (simulates real world)
+    # global_position = add_noise(global_position, 0, STD_M[0:3], len(global_position))
+    # global_bearing = add_noise(global_bearing, 0, STD_M[3], None)
 
     all_g_p_l = []
     all_z = []
@@ -176,8 +182,8 @@ camera_resolution = np.array([camera.getWidth(), camera.getHeight()])
 
 # Other program variables
 count = 0
-v = .1
-omega = 0.03
+v = .05
+omega = -0.1
 goal_pos = [0.0, 1.0]  # Hardcoded goal for now
 u = np.array([v, omega])
 agent = None
@@ -187,38 +193,55 @@ def omega_to_wheel_speeds(omega, v):
     return (v - wd) / WHEEL_RADIUS, (v + wd) / WHEEL_RADIUS
 
 
-# occ_map = OccupancyMap(MAP_SIZE, OG_RES)
-# readings = get_lidar_readings(lidar)
-# occ_map.update(readings, pos_robot[0:2], bearing)
-while robot.step(timestep) != -1:
-    if count < 1:
-        pos_robot, bearing = robot_state_ground_truth()
-        agent = EKF_Agent([*pos_robot, abs(bearing)], max_landmarks=NUM_LANDMARKS)
+# Init empty occupancy map and robot state
+occ_map = OccupancyMap(MAP_BOUNDS, OG_RES)
 
+while robot.step(timestep) != -1:
+    count += 1
+
+    if count == 1:
+        _, _, pos_robot, bearing, _ = get_measurements(gps, compass, camera)
+        agent = EKF_Agent([*pos_robot, bearing], max_landmarks=NUM_LANDMARKS)
+        continue
+
+    readings = get_lidar_readings(lidar)
+
+    # Send out control signals and propagate state
     left_v, right_v = omega_to_wheel_speeds(omega, v)
     leftMotor.setVelocity(left_v)
     rightMotor.setVelocity(right_v)
+    # leftMotor.setVelocity(0.0)
+    # rightMotor.setVelocity(0.0)
 
     x_hat_t, Sigma_x_t = agent.propagate(u, dt)
 
-    all_g_p_l, all_z, _, bearing, detected_objects = get_measurements()
-    if count % UPDATE_FREQ == 0 and len(detected_objects) >= NUM_LANDMARKS:
+    if count % UPDATE_FREQ == 0:
 
+        # Get new measurement signals
+        all_g_p_l, all_z, pos_robot, bearing, detected_objects = get_measurements(gps, compass, camera)
+
+        # Update State
         x_hat_t, Sigma_x_t = agent.update(all_z.copy(), all_g_p_l.copy())
 
+        # Update Occupancy Map
+        occ_map.update(readings, x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]], x_hat_t[ROBOT_STATE["THETA"]])
+
+        if count % 100 == 0:
+
+            pmap = occ_map.get_map()
+            occ_map.print_occupancy_map(pmap)
+            cat = "meow"
+
+
+        # Print out estimated vs actual state
         estimated = "Estimated X : [%8.8f, %8.8f, %8.8f, %8.8f]; " + "".join(["Estimated landmark " + str(i) + ": [%8.8f, %8.8f, %8.8f]; " for i in range(NUM_LANDMARKS)])
         print(estimated % to_tuple(x_hat_t))
-
-        actual = "Actual X : [%8.8f, %8.8f, %8.8f, %8.8f]; " + "".join(["Actual landmark " + str(i) + ": [%8.8f, %8.8f, %8.8f]; " for i in range(NUM_LANDMARKS)])
         pos_robot, bearing = robot_state_ground_truth()
         _, landmark_global_positions = get_robot_and_global_positions(robot, detected_objects)
+        actual = "Actual X : [%8.8f, %8.8f, %8.8f, %8.8f]; " + "".join(["Actual landmark " + str(i) + ": [%8.8f, %8.8f, %8.8f]; " for i in range(len(landmark_global_positions))])
         print(actual % (pos_robot[0], pos_robot[1], pos_robot[2], abs(bearing), *np.array(landmark_global_positions).flatten()))
 
-    count += 1
-    # Get Lines at this timestep
-    # Currently plotting every timestep (remove or plot less frequently)
-    # lines = findLines(np.array(lidar.getRangeImage()), lidar.getMaxRange())
-    # pass
+
 
     '''
             # Detection via hough line algorithm

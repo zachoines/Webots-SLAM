@@ -1,3 +1,5 @@
+import cv2
+
 from vector import *
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,12 +17,10 @@ def distance(a, b):
     return np.sum(np.square(a - b))
 
 
-def print_lidar(robot_pos, x, y):
-    plt.figure(figsize=(10, 10))
-    rx, ry = robot_pos
-    plt.plot([
-        x,
-        np.ones(np.size(x)) * rx],
+def print_lidar(rx, ry, x, y):
+    plt.figure(figsize=(8, 8))
+    plt.plot(
+        [x, np.ones(np.size(x)) * rx],
         [y, np.ones(np.size(y)) * ry],
         "ro-",
         scalex=False,
@@ -96,27 +96,28 @@ def map(x, in_min, in_max, out_min, out_max):
     return mapped
 
 
-def get_lidar_readings(lidar, max_range=2*np.pi):
+def get_lidar_readings(lidar, ranges=[(-180, 180)]):
     dists, range_max = np.array(lidar.getRangeImage()), lidar.getMaxRange()
     num_points = len(dists)
-    angles = np.linspace(0.0, max_range, num_points)
+    angles = np.array([])
+    points_in_range = int(num_points / len(ranges))
+    for start, end in ranges:
+        new_angles = np.linspace(start, end, points_in_range, endpoint=False)
+        angles = np.concatenate((angles, np.deg2rad(new_angles)))
+
     filtered_dists = []
     for dist in dists:
         if dist > range_max:
             filtered_dists.append(range_max)
         else:
             filtered_dists.append(dist)
-    return angles, filtered_dists
-
-
-def move_robot(v, w, lm, rm, al=52):
-    v_left = (v - w) * al * 0.5
-    v_right = (v + w) * al * 0.5
-
-    lm.setVelocity(v_left)
-    rm.setVelocity(v_right)
+    return np.array(angles), np.array(filtered_dists)
 
 
 def stop_robot(lm, rm):
     lm.setVelocity(0.0)
     rm.setVelocity(0.0)
+
+
+def add_noise(v, loc, sig, shape):
+    return v + np.random.normal(loc=loc, scale=sig, size=shape)
