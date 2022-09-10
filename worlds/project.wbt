@@ -2,12 +2,12 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation 0.5472112373356539 -0.6356877723358677 -0.5444822474941168 4.269561352642248
-  position -1.1619992386087994 1.070896568457595 31.87973046520586
+  orientation 0.615389671396271 -0.6088486052686349 -0.5005985699152842 4.061313229497372
+  position -1.0240070539030743 3.731794509382846 14.643138048932487
 }
 DEF e-puck Robot {
-  translation -0.58952 0.796851 0.001
-  rotation 0 0 -1 -1.047195307179586
+  translation 0.743861 0.22833 0.001
+  rotation 0 0 -1 -1.5707853071795865
   children [
     DEF gps GPS {
     }
@@ -38,7 +38,7 @@ DEF e-puck Robot {
         }
       ]
       endPoint DEF EPUCK_LEFT_WHEEL Solid {
-        translation 0 0.02599999999999995 0.02
+        translation 0 0.0259999999999999 0.02
         rotation 0 1 0 0
         children [
           DEF EPUCK_WHEEL Transform {
@@ -190,7 +190,7 @@ DEF e-puck Robot {
         }
       ]
       endPoint DEF EPUCK_RIGHT_WHEEL Solid {
-        translation 0 -0.025999999999999888 0.02
+        translation 0 -0.025999999999999874 0.02
         rotation 0 1 0 0
         children [
           Transform {

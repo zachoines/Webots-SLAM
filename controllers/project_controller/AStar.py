@@ -1,11 +1,11 @@
 import math
 import numpy as np
-from utility import bresenham
+from utility import bresenham, bresenham_march
 
 class AStar:
 
     def __init__(self, occ_map, goal_threshold=5, robot_radius=3):
-        x, y = occ_map.shape
+        y, x = occ_map.shape
         self.robot_radius = robot_radius
         self.goal_threshold = goal_threshold
         self.min_x, self.max_x = 0, x
@@ -32,7 +32,7 @@ class AStar:
             "id": index
         }
 
-    def movement_pattern(self, num_pixels=1):
+    def movement_pattern(self, num_pixels=2):
         '''
         The basic search pattern of the A* Algorithm. Basically searching every node around current node.
         :param num_pixels: The movement amount the A* algotihm takes around current node
@@ -93,18 +93,18 @@ class AStar:
             closed_set[c_id] = current
 
             for i, (x, y, cost) in enumerate(self.motion):
-                    node = self.Node(current['x'] + x, current['y'] + y, current['cost'] + cost, c_id)
-                    n_id = node['id']
+                node = self.Node(current['x'] + x, current['y'] + y, current['cost'] + cost, c_id)
+                n_id = node['id']
 
-                    if (not self.verify_node(node, current)) or (n_id in closed_set):
-                        continue
+                if (not self.verify_node(node, current)) or (n_id in closed_set):
+                    continue
 
-                    if n_id not in open_set:
-                        open_set[n_id] = node  # discovered a new node
-                    else:
-                        if open_set[n_id]['cost'] > node['cost']:
-                            # This path is the best until now. record it
-                            open_set[n_id] = node
+                if n_id not in open_set:
+                    open_set[n_id] = node  # discovered a new node
+                else:
+                    if open_set[n_id]['cost'] > node['cost']:
+                        # This path is the best until now. record it
+                        open_set[n_id] = node
 
         path = []
         path.append([goal_node['x'], goal_node['y']])
@@ -125,9 +125,9 @@ class AStar:
         :param n2: The target node the robot wants to travel too
         :return: A cost associated with traveling to the target node
         '''
-        w = 1 if self.obstacle_map[n2['x']][n2['y']] == 0.0 else 2  # Prefer plotting path in known areas
+        w = 1 if self.obstacle_map[n2['y']][n2['x']] == 0.0 else 2  # Prefer plotting path in known areas
         w = 5 if self.check_collision(n1, n2) else w  # Really punish running into a wall TODO: Try to find ways to remove this
-        d = w * math.hypot(n1['x'] - n2['x'], n1['y'] - n2['y'])
+        d = w * math.hypot(n1['y'] - n2['y'], n1['x'] - n2['x'])
         return d
 
     def too_close(self, point):
@@ -137,13 +137,13 @@ class AStar:
         :param point: Point robot will move too
         :return: Boolean indicating if its safe to travel to this point
         '''
-        x_lim, y_lim = self.obstacle_map.shape
+        y_lim, x_lim = self.obstacle_map.shape
         x, y = point
         x_start = int(np.clip(x - self.robot_radius, 0, x_lim))
         x_end = int(np.clip(x + self.robot_radius, 0, x_lim))
         y_start = int(np.clip(y - self.robot_radius, 0, y_lim))
         y_end = int(np.clip(y + self.robot_radius, 0, y_lim))
-        roi = self.obstacle_map[x_start:x_end, y_start:y_end]
+        roi = self.obstacle_map[y_start:y_end, x_start:x_end]
 
         if roi.max() < 1.0:
             return False
@@ -158,17 +158,10 @@ class AStar:
         :return: boolean indicating if the robot will crash into something on the way to the goal
         '''
 
-        ray_cast = bresenham((n1['x'], n1['y']), (n2['x'], n2['y']))
-        # Overly redundant point checking
-        # TODO: Makes point skip dynamic
-        ray_cast = ray_cast[0: -1: 3] if len(ray_cast) > 10 else ray_cast
-        for occupancy_point in ray_cast[0: -1: 2]:
-            if self.obstacle_map[occupancy_point[0]][occupancy_point[1]] >= 1.0:
-                return True
-            elif self.too_close(occupancy_point):
-                return True
-
-        return False
+        # bresenham_march(self.obstacle_map, [n1['y'], n1['x']], (n2['y'], n2['x']))
+        ray_cast = bresenham((n1['y'], n1['x']), (n2['y'], n2['x']))
+        indexes = self.obstacle_map[ray_cast[:, 0], ray_cast[:, 1]]
+        return max(indexes) >= 1.0
 
     def verify_node(self, target, current):
         '''
@@ -177,7 +170,7 @@ class AStar:
         :param current: Current node robot is located
         :return: A boolean indicating if target is safe to travel too
         '''
-        if self.obstacle_map[target['x']][target['y']] >= 1.0:
+        if self.obstacle_map[target['y']][target['x']] >= 1.0:
             return False
         elif target['x'] < self.min_x:
             return False

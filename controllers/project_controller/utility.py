@@ -30,6 +30,57 @@ def print_lidar(rx, ry, x, y):
     plt.grid(True)
     plt.show()
 
+def bresenham_march(img, p1, p2):
+    x1 = p1[0]
+    y1 = p1[1]
+    x2 = p2[0]
+    y2 = p2[1]
+    # tests if any coordinate is outside the image
+    if (
+            x1 >= img.shape[0]
+            or x2 >= img.shape[0]
+            or y1 >= img.shape[1]
+            or y2 >= img.shape[1]
+    ):  # tests if line is in image, necessary because some part of the line must be inside, it respects the case that the two points are outside
+        if not cv2.clipLine((0, 0, *img.shape), p1, p2):
+            print("not in region")
+            return
+
+    steep = math.fabs(y2 - y1) > math.fabs(x2 - x1)
+    if steep:
+        x1, y1 = y1, x1
+        x2, y2 = y2, x2
+
+    # takes left to right
+    also_steep = x1 > x2
+    if also_steep:
+        x1, x2 = x2, x1
+        y1, y2 = y2, y1
+
+    dx = x2 - x1
+    dy = math.fabs(y2 - y1)
+    error = 0.0
+    delta_error = 0.0
+    # Default if dx is zero
+    if dx != 0:
+        delta_error = math.fabs(dy / dx)
+
+    y_step = 1 if y1 < y2 else -1
+
+    y = y1
+    ret = []
+    for x in range(x1, x2):
+        p = (y, x) if steep else (x, y)
+        if p[0] < img.shape[0] and p[1] < img.shape[1]:
+            ret.append((p, img[p]))
+        error += delta_error
+        if error >= 0.5:
+            y += y_step
+            error -= 1
+    if also_steep:  # because we took the left to right instead
+        ret.reverse()
+    return np.array(ret)
+
 
 def bresenham(current, target):
     """
@@ -112,11 +163,6 @@ def get_lidar_readings(lidar, ranges=[(-180, 180)]):
         else:
             filtered_dists.append(dist)
     return np.array(angles), np.array(filtered_dists)
-
-
-def stop_robot(lm, rm):
-    lm.setVelocity(0.0)
-    rm.setVelocity(0.0)
 
 
 def add_noise(v, loc, sig, shape):

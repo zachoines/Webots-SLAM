@@ -42,22 +42,31 @@ rightMotor.setPosition(float('inf'))
 robot.step(timestep)  # Make initial step for
 
 
-def get_path(occ_map, robot_pos, goal_pos, print_map=False):
+def get_path(occ_map, robot_pos, goal_pos, print_map=True):
     # start and goal position
     pmap = occ_map.get_map()
     rx, ry = occ_map.world_to_grid(robot_pos)
-    gx, gy = occ_map.world_to_gridz(goal_pos)
-    a_star = AStar(pmap)
-    path = a_star.get_path(rx, ry, gx, gy)
-    path.reverse()
+    gx, gy = occ_map.world_to_grid(goal_pos)
+    scale = 4
+    # pmap[gy][gx] = 2.0
+    # occ_map.print_occupancy_map(pmap)
+
+    d_size = (pmap.shape[0] // scale, pmap.shape[1] // scale)
+    resized = cv2.resize(pmap, d_size, interpolation=cv2.INTER_AREA)
+    a_star = AStar(resized)
+    path = a_star.get_path(rx // scale, ry // scale, gx // scale, gy // scale)
+    # path.reverse()
+    # path = [[elem[1], elem[0]] for elem in path]
+
     path_converted = []
     for point in path:
-        path_converted.append(occ_map.grid_to_world(point))
+        path_converted.append(occ_map.grid_to_world(point) * scale)
 
     if print_map:
-        occ_map.print_path(path_converted)
+        occ_map.print_path(np.array(path) * scale)
 
     return path_converted, path, pmap
+
 
 def get_robot_and_global_positions(robot, landmarks):
 
@@ -74,11 +83,11 @@ def get_robot_and_global_positions(robot, landmarks):
     return np.array(landmark_robot_positions), np.array(landmark_global_positions)
 
 
-def crash_detection(lidar, fov=(45, 135), threshold=0.1):
+def crash_detection(readings, fov=(45, 135), threshold=0.1):
     '''
     Uses lidar object to detect obstacles closer than threshold within specified FOV
     '''
-    ang, dist = get_lidar_readings(lidar)
+    ang, dist = readings
     for a, d in zip(ang, dist):
         if fov[0] <= np.degrees(a) <= fov[1]:
             if d <= threshold:
@@ -143,13 +152,13 @@ def detect_landmarks_3D_camera(cam, camera_resolution, camera_fov):
 
 
 def get_measurements(gps, compass, camera):
-    # global_position, global_bearing = get_compass_and_gps_measures(gps, compass)
-    global_position, global_bearing = robot_state_ground_truth()
+    global_position, global_bearing = get_compass_and_gps_measures(gps, compass)
+    # global_position, global_bearing = robot_state_ground_truth()
     landmark_camera_positions, detected_objects = detect_landmarks_3D_camera(camera, camera_resolution, camera_fov)
 
     # Add Measurement noise (simulates real world)
-    # global_position = add_noise(global_position, 0, STD_M[0:3], len(global_position))
-    # global_bearing = add_noise(global_bearing, 0, STD_M[3], None)
+    global_position = add_noise(global_position, 0, STD_M[0:3], len(global_position))
+    global_bearing = add_noise(global_bearing, 0, STD_M[3], None)
 
     all_g_p_l = []
     all_z = []
@@ -175,6 +184,10 @@ def get_measurements(gps, compass, camera):
     return all_g_p_l, all_z, global_position, global_bearing, detected_objects
 
 
+def omega_to_wheel_speeds(omega, v):
+    wd = omega * AXLE_LENGTH * 0.5
+    return (v - wd) / WHEEL_RADIUS, (v + wd) / WHEEL_RADIUS
+
 # Camera params
 # camera_matrix, distortion_coefficients, rotation_vectors, translation_vectors, new_camera_matrix, roi = calibrate_camera()
 camera_fov = camera.getFov()
@@ -182,16 +195,17 @@ camera_resolution = np.array([camera.getWidth(), camera.getHeight()])
 
 # Other program variables
 count = 0
-v = .05
-omega = -0.1
-goal_pos = [0.0, 1.0]  # Hardcoded goal for now
-u = np.array([v, omega])
+v = 0
+omega = 0
+goal_pos = [-1.99, 1.33]  # Hardcoded goal for now
+current_destination = None
+traveling = False
 agent = None
-
-def omega_to_wheel_speeds(omega, v):
-    wd = omega * AXLE_LENGTH * 0.5
-    return (v - wd) / WHEEL_RADIUS, (v + wd) / WHEEL_RADIUS
-
+path = []
+debug = True
+d_pos = np.Infinity
+d_theta = np.Infinity
+e_stop = False
 
 # Init empty occupancy map and robot state
 occ_map = OccupancyMap(MAP_BOUNDS, OG_RES)
@@ -199,41 +213,43 @@ occ_map = OccupancyMap(MAP_BOUNDS, OG_RES)
 while robot.step(timestep) != -1:
     count += 1
 
+    # Initialize on first frame
     if count == 1:
         _, _, pos_robot, bearing, _ = get_measurements(gps, compass, camera)
         agent = EKF_Agent([*pos_robot, bearing], max_landmarks=NUM_LANDMARKS)
         continue
 
+    # Get new measurement signals
     readings = get_lidar_readings(lidar)
+    all_g_p_l, all_z, pos_robot, bearing, detected_objects = get_measurements(gps, compass, camera)
 
-    # Send out control signals and propagate state
-    left_v, right_v = omega_to_wheel_speeds(omega, v)
-    leftMotor.setVelocity(left_v)
-    rightMotor.setVelocity(right_v)
-    # leftMotor.setVelocity(0.0)
-    # rightMotor.setVelocity(0.0)
-
+    # Propagate state
+    u = [v, omega]
     x_hat_t, Sigma_x_t = agent.propagate(u, dt)
 
-    if count % UPDATE_FREQ == 0:
+    # Update State estimate
+    x_hat_t, Sigma_x_t = agent.update(all_z.copy(), all_g_p_l.copy())
 
-        # Get new measurement signals
-        all_g_p_l, all_z, pos_robot, bearing, detected_objects = get_measurements(gps, compass, camera)
+    # Update Occupancy Map
+    occ_map.update(readings, x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]], x_hat_t[ROBOT_STATE["THETA"]])
 
-        # Update State
-        x_hat_t, Sigma_x_t = agent.update(all_z.copy(), all_g_p_l.copy())
+    # Halt and recalculate path if we are about to crash
+    if not e_stop and crash_detection(readings):
+        leftMotor.setVelocity(0.0)
+        rightMotor.setVelocity(0.0)
+        v = 0.0
+        omega = 0.0
+        vPID.reset()
+        wPID.reset()
+        e_stop = True
+        path.clear()
+        current_destination = None
+        continue
+    else:
+        e_stop = False
 
-        # Update Occupancy Map
-        occ_map.update(readings, x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]], x_hat_t[ROBOT_STATE["THETA"]])
-
-        if count % 100 == 0:
-
-            pmap = occ_map.get_map()
-            occ_map.print_occupancy_map(pmap)
-            cat = "meow"
-
-
-        # Print out estimated vs actual state
+    # Print out estimated vs actual state
+    if debug:
         estimated = "Estimated X : [%8.8f, %8.8f, %8.8f, %8.8f]; " + "".join(["Estimated landmark " + str(i) + ": [%8.8f, %8.8f, %8.8f]; " for i in range(NUM_LANDMARKS)])
         print(estimated % to_tuple(x_hat_t))
         pos_robot, bearing = robot_state_ground_truth()
@@ -241,101 +257,65 @@ while robot.step(timestep) != -1:
         actual = "Actual X : [%8.8f, %8.8f, %8.8f, %8.8f]; " + "".join(["Actual landmark " + str(i) + ": [%8.8f, %8.8f, %8.8f]; " for i in range(len(landmark_global_positions))])
         print(actual % (pos_robot[0], pos_robot[1], pos_robot[2], abs(bearing), *np.array(landmark_global_positions).flatten()))
 
+    # If we still haven't reached current destination on path
+    if current_destination is not None and abs(d_pos) > D_THRESH:
+        # Delta distance to target
+        d_pos = distance(np.array(pos_robot), np.array(current_destination))
+        # Delta angle to target
+        d_theta = angle_to(
+            np.array(x_hat_t[0:ROBOT_STATE["Z"]]),
+            np.array(current_destination),
+            heading_vector(x_hat_t[ROBOT_STATE["THETA"]]),
+            degrees=False,
+            signed=True
+        )
 
+        # Compute new control signals
+        newLinearVelocity, newAngularVelocity = 0, 0
+        if abs(d_theta) < D_THRESH:  # Rotate first, then move forward
+            newLinearVelocity = vPID.update(d_pos, dt)
+            newAngularVelocity = wPID.update(d_theta, dt)
+        else:
+            newAngularVelocity = wPID.update(d_theta, dt)
 
-    '''
-            # Detection via hough line algorithm
-            tmpMap = OccupancyMap(MAP_SIZE, OG_RES)
-            tmpMap.update(readings, x_hat_t[0:2], x_hat_t[2])
-            tmpPmap = tmpMap.get_map() 
-            lines = hough_line_detection_image(tmpPmap, plot_lines=True)
-            measurements = []
-            if len(lines):
-                for r, theta in lines:
-                    x, y = polarToCart(r, theta)
-                    shape = occ_map.shape
-                    perpendicular_line = np.array(occ_map.grid_to_world((x + (shape[0] / 2), y + (shape[1] / 2))))
-                    measurements.append(np.expand_dims(perpendicular_line, axis=-1))
-    '''
+        # Send new commands
+        omega = newAngularVelocity
+        v = newLinearVelocity
+        left_v, right_v = omega_to_wheel_speeds(omega, v)
+        leftMotor.setVelocity(left_v)
+        rightMotor.setVelocity(right_v)
 
-'''
-occ_map = OccupancyMap(MAP_SIZE, OG_RES)
+    # Get next destination to travel to
+    else:
 
-num_steps = 0
-e_stop = False
-while robot.step(timestep) != -1:
-    num_steps += 1
+        # Check if we reached the goal
+        if abs(distance(x_hat_t[0:ROBOT_STATE["Z"]], goal_pos)) < D_THRESH:
+            leftMotor.setVelocity(0.0)
+            rightMotor.setVelocity(0.0)
+            v = 0.0
+            omega = 0.0
+            current_destination = None
+            # vPID.reset()
+            # wPID.reset()
+            break
 
-    # Init empty occupancy map and robot state
-    pos_robot, bearing = robot_state_ground_truth()
-    readings = get_lidar_readings(lidar)
-    occ_map.update(readings, pos_robot, bearing)
-
-    # Now iterate through every point
-    path, occ_points, pmap = get_path(occ_map, pos_robot, goal_pos)
-
-    # Skip the first node in path (it's just the current robots position). If path is real long, use every other point.
-    # TODO: Makes point skip dynamic
-    path = path[1:] if len(path) > 15 else path[1:-1:5]
-    for point in path:
-
-        # Forcefully halt and recalculate path if we are about to crash
-        # However, don't halt if already halted previously. Give the robot a chance to move first.
-        if not e_stop and crash_detection(lidar):
-            stop_robot()
+        # Get point of interest
+        elif len(path) > 0:
+            # Reset loop variants
             vPID.reset()
             wPID.reset()
-            e_stop = True
-            break
+            d_pos = np.Infinity
+            d_theta = np.Infinity
+            current_destination = path.pop(0)
+
+        # Need to generate more points on path
         else:
-            e_stop = False
+            # Generate path to goal
+            path, occ_points, pmap = get_path(occ_map, x_hat_t[0:2], goal_pos)
+            # Skip first point (current robot's position). Then use every other point. TODO: Makes point skip dynamic
+            path = path[1:] if len(path) > 15 else path[1:-1:5]
 
-        # Reset loop variants
-        vPID.reset()
-        wPID.reset()
-        d_pos = np.Infinity
-        d_theta = np.Infinity
 
-        # Keep moving until we have reached destination
-        while abs(d_pos) > D_THRESH and robot.step(timestep) != -1:
-            pos_robot, bearing = robot_state_ground_truth()
-            num_steps += 1
 
-            # Update occ_map every n steps
-            if num_steps % OCC_MAP_UPDATE_RATE == 0:
-                readings = get_lidar_readings(lidar)
-                occ_map.update(readings, pos_robot, bearing)
-                pmap = occ_map.get_map()
-
-            # Compute the error
-            d_pos = distance(np.array(pos_robot), np.array(point))  # distance to target
-            d_theta = angle_to(  # angle to target
-                np.array(pos_robot),
-                np.array(point),
-                heading_vector(bearing),
-                degrees=False,
-                signed=True
-            )
-
-            # Compute new control signals
-            newLinearVelocity, newAngularVelocity = 0, 0
-            if abs(d_theta) < D_THRESH:  # Rotate first, then move forward
-                newLinearVelocity = vPID.update(d_pos, dt)
-                newAngularVelocity = wPID.update(d_theta, dt)
-            else:
-                newAngularVelocity = wPID.update(d_theta, dt)
-
-            # Send new commands
-            move_robot(
-                -newLinearVelocity,
-                newAngularVelocity,
-                leftMotor,
-                rightMotor
-            )
-
-    stop_robot()
-    vPID.reset()
-    wPID.reset()
-'''
 
 
