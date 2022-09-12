@@ -115,6 +115,7 @@ class AStar:
             path.append(point)
             parent_index = n['parent_index']
 
+        path.reverse()
         return path
 
 
@@ -165,7 +166,6 @@ class AStar:
 
     def verify_node(self, target, current):
         '''
-
         :param target: Target node
         :param current: Current node robot is located
         :return: A boolean indicating if target is safe to travel too

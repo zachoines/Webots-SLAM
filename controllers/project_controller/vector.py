@@ -20,9 +20,10 @@ def polarToCart(rho, theta):
 
 # Unit length vector pointing in "look" direction
 def heading_vector(phi):
+
     return np.array([
         np.cos(phi),
-        -np.sin(phi)
+        np.sin(phi)
     ])
 
 
@@ -32,16 +33,14 @@ def signed_angle(a, b):
     sign = np.sign(np.cross(a, b))
     return unsigned_angle * sign
 
-
 # Angle between two vectors
 def angle(a, b):
     dem = (np.linalg.norm(a) * np.linalg.norm(b))
-
-    if dem == 0:
+    if dem < 1e-15:
         return 0
     try:
         return math.acos(
-            (a @ b) / dem
+            np.clip((a @ b) / dem, -1.0, 1.0)
         )
     except:
       return 0
@@ -58,3 +57,5 @@ def angle_to(current_pos, target_pos, direction_vector, degrees=False, signed=Fa
         vector_to = target_pos - current_pos
         theta = signed_angle(vector_to, direction_vector)
         return np.rad2deg(theta) if degrees else theta
+
+

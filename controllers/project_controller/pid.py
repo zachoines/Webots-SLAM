@@ -22,8 +22,8 @@ class PID:
     def updateTarget(self, target):
         self.target = target
 
-    def update(self, current, ts):
-        error = self.target - current
+    def update(self, current, ts, reverse=False):
+        error = current - self.target if reverse else self.target - current
         self.integral += error * ts
 
         # Clip integral

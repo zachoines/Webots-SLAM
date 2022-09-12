@@ -120,7 +120,7 @@ class OccupancyMap:
         '''
         (y1, x1), (y2, x2) = self.TL, self.BR
         new_x = map(point[0], 0, self.occ_map.shape[0] - 1, min(x1, x2), max(x1, x2))
-        new_y = map(point[1], 0, self.occ_map.shape[1] - 1, min(y1, y2), max(y1, y2))
+        new_y = map(point[1], self.occ_map.shape[1] - 1, 0, min(y1, y2), max(y1, y2))
         return new_x, new_y
 
     def extend_occupied(self, occupancy_map, y, x):

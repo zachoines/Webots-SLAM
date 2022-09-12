@@ -14,13 +14,12 @@ import math
 import numpy as np
 import cv2
 
-
 robot = Supervisor()
 robotNode = robot.getFromDef("e-puck")
 
 # Init PIDS of for control signals
 vPID = PID(0.0, A_MAX, 0.6, 0.9, 0.02, 0.01)
-wPID = PID(0.0, A_MAX, 0.2, 0.05, 0.02, 0.01)
+wPID = PID(0.0, A_MAX, 0.6, 0.9, 0.02, 0.01)
 
 # Init robot and sensors
 timestep = int(robot.getBasicTimeStep())
@@ -42,28 +41,23 @@ rightMotor.setPosition(float('inf'))
 robot.step(timestep)  # Make initial step for
 
 
-def get_path(occ_map, robot_pos, goal_pos, print_map=True):
+def get_path(occ_map, robot_pos, goal_pos, print_map=True, scale=4):
     # start and goal position
     pmap = occ_map.get_map()
     rx, ry = occ_map.world_to_grid(robot_pos)
     gx, gy = occ_map.world_to_grid(goal_pos)
-    scale = 4
-    # pmap[gy][gx] = 2.0
-    # occ_map.print_occupancy_map(pmap)
 
     d_size = (pmap.shape[0] // scale, pmap.shape[1] // scale)
     resized = cv2.resize(pmap, d_size, interpolation=cv2.INTER_AREA)
     a_star = AStar(resized)
-    path = a_star.get_path(rx // scale, ry // scale, gx // scale, gy // scale)
-    # path.reverse()
-    # path = [[elem[1], elem[0]] for elem in path]
-
+    path = np.array(a_star.get_path(rx // scale, ry // scale, gx // scale, gy // scale)) * scale
     path_converted = []
     for point in path:
-        path_converted.append(occ_map.grid_to_world(point) * scale)
+        converted = np.array([*occ_map.grid_to_world(point)])
+        path_converted.append(converted)
 
     if print_map:
-        occ_map.print_path(np.array(path) * scale)
+        occ_map.print_path(np.array(path))
 
     return path_converted, path, pmap
 
@@ -83,7 +77,7 @@ def get_robot_and_global_positions(robot, landmarks):
     return np.array(landmark_robot_positions), np.array(landmark_global_positions)
 
 
-def crash_detection(readings, fov=(45, 135), threshold=0.1):
+def crash_detection(readings, fov=(-90, 90), threshold=0.1):
     '''
     Uses lidar object to detect obstacles closer than threshold within specified FOV
     '''
@@ -197,7 +191,8 @@ camera_resolution = np.array([camera.getWidth(), camera.getHeight()])
 count = 0
 v = 0
 omega = 0
-goal_pos = [-1.99, 1.33]  # Hardcoded goal for now
+# goal_pos = [-1.99, 1.33]  # Hardcoded goal for now
+goal_pos = [1.99, 1.33]
 current_destination = None
 traveling = False
 agent = None
@@ -249,7 +244,7 @@ while robot.step(timestep) != -1:
         e_stop = False
 
     # Print out estimated vs actual state
-    if debug:
+    if debug and count % 15 == 0:
         estimated = "Estimated X : [%8.8f, %8.8f, %8.8f, %8.8f]; " + "".join(["Estimated landmark " + str(i) + ": [%8.8f, %8.8f, %8.8f]; " for i in range(NUM_LANDMARKS)])
         print(estimated % to_tuple(x_hat_t))
         pos_robot, bearing = robot_state_ground_truth()
@@ -260,11 +255,13 @@ while robot.step(timestep) != -1:
     # If we still haven't reached current destination on path
     if current_destination is not None and abs(d_pos) > D_THRESH:
         # Delta distance to target
-        d_pos = distance(np.array(pos_robot), np.array(current_destination))
+        d_pos = distance(x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]], current_destination)
+        d_theta_test = math.atan2(current_destination[0] - x_hat_t[0], current_destination[1] - x_hat_t[1])
+
         # Delta angle to target
         d_theta = angle_to(
-            np.array(x_hat_t[0:ROBOT_STATE["Z"]]),
-            np.array(current_destination),
+            x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]],
+            current_destination,
             heading_vector(x_hat_t[ROBOT_STATE["THETA"]]),
             degrees=False,
             signed=True
@@ -273,7 +270,7 @@ while robot.step(timestep) != -1:
         # Compute new control signals
         newLinearVelocity, newAngularVelocity = 0, 0
         if abs(d_theta) < D_THRESH:  # Rotate first, then move forward
-            newLinearVelocity = vPID.update(d_pos, dt)
+            newLinearVelocity = vPID.update(d_pos, dt, reverse=True)
             newAngularVelocity = wPID.update(d_theta, dt)
         else:
             newAngularVelocity = wPID.update(d_theta, dt)
@@ -295,15 +292,15 @@ while robot.step(timestep) != -1:
             v = 0.0
             omega = 0.0
             current_destination = None
-            # vPID.reset()
-            # wPID.reset()
+            vPID.reset()
+            wPID.reset()
             break
 
         # Get point of interest
         elif len(path) > 0:
             # Reset loop variants
-            vPID.reset()
-            wPID.reset()
+            # vPID.reset()
+            # wPID.reset()
             d_pos = np.Infinity
             d_theta = np.Infinity
             current_destination = path.pop(0)
@@ -311,10 +308,8 @@ while robot.step(timestep) != -1:
         # Need to generate more points on path
         else:
             # Generate path to goal
-            path, occ_points, pmap = get_path(occ_map, x_hat_t[0:2], goal_pos)
-            # Skip first point (current robot's position). Then use every other point. TODO: Makes point skip dynamic
-            path = path[1:] if len(path) > 15 else path[1:-1:5]
-
+            path, occ_points, pmap = get_path(occ_map, x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]], goal_pos)
+            path = path[1:]  # First point irs robots current position
 
 
 
