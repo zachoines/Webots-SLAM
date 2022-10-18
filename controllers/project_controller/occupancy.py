@@ -1,3 +1,5 @@
+import math
+
 from utility import *
 import numpy as np
 import matplotlib.pyplot as plt
@@ -43,12 +45,11 @@ class OccupancyMap:
         '''
         self.log_odds = self.l(new_map) + self.log_odds - self.prior
 
-    def update(self, readings, global_position, global_bearing, printing=False):
+    def update(self, readings, global_position, global_bearing, printing=False, lidar_max_range=3):
         '''
         Update occupancy map with reading from lidar and positional information of robot
         '''
-        angles, dist = readings
-        dist = np.array(dist)
+        angles, dist, inf_idx = readings
         ox = np.cos(angles) * dist
         oy = np.sin(angles) * dist
 
@@ -58,10 +59,10 @@ class OccupancyMap:
         if printing:
             print_lidar(0, 0, oy, ox)
 
-        occ_map_tmp = self.generate_occupancy_map(global_position[0], global_position[1], lidar_global[:, 0], lidar_global[:, 1])
+        occ_map_tmp = self.generate_occupancy_map(global_position[0], global_position[1], lidar_global[:, 0], lidar_global[:, 1], inf_idx, lidar_max_range)
         self.update_log_odds_occ(occ_map_tmp)
 
-    def generate_occupancy_map(self, robot_x, robot_y, ox, oy):
+    def generate_occupancy_map(self, robot_x, robot_y, ox, oy, infinity_indexes, lidar_max_range):
         '''
         Determines free vs. occupied regions of a map by tracing readings from lidar.
         Returns occupancy map.
@@ -75,9 +76,10 @@ class OccupancyMap:
         robot_x = np.clip(np.round(map(robot_x, self.world_map_bounds[0][1], self.world_map_bounds[1][1], 0, occupancy_map.shape[0] - 1)), 0, self.oc_shape[1] - 1).astype(int)
 
         # occupancy grid computed with bresenham ray casting
-        for (y, x) in zip(occupied_y_grid_index, occupied_x_grid_index):
+        for y, x, inf_idx in zip(occupied_y_grid_index, occupied_x_grid_index, infinity_indexes):
             cv2.line(occupancy_map, (robot_x, robot_y), (x, y), (0, self.p_miss, 0))
-            self.extend_occupied(occupancy_map, y, x)
+            if not inf_idx:
+                self.extend_occupied(occupancy_map, y, x)
 
         return occupancy_map
 
@@ -155,7 +157,6 @@ class OccupancyMap:
         return np.array(updated)
 
     def print_occupancy_map(self, m):
-        # cv2.imshow('graycsale image', m)
         m = np.array(m)
         shape = m.shape
         plt.figure(figsize=(2 * self.world_map_size[1], 2 * self.world_map_size[0]))
@@ -169,6 +170,10 @@ class OccupancyMap:
         plt.grid(True, which="minor", color="w", linewidth=.6, alpha=0.5)
         plt.colorbar()
         plt.show()
+
+    def print_map(self):
+        pmap = self.get_map()
+        self.print_occupancy_map(pmap)
 
     def print_path(self, path):
         pmap = self.get_map()

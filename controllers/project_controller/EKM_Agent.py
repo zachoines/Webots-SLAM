@@ -166,7 +166,7 @@ class EKF_Agent:
 
     def _update_landmarks(self, z_t, g_p_l):
         # NOTE: Simply use euclidean distance to track landmarks for now
-        # TODO:: Need to devise a better way too track landmarks across frames here
+        # TODO:: Need to devise a better way to track landmarks across frames here
         g_p_l, z_t, update_mask = self._align_landmarks_and_measurements(
             np.array_split(np.array(self.x_hat_t[ROBOT_STATE["THETA"] + 1:]), NUM_LANDMARKS),
             g_p_l,

@@ -2,24 +2,22 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation 0.6064964768094941 -0.5837682184071362 -0.5397931926167916 4.099941028304726
-  position -0.4706349593600214 1.9056287665906557 6.510785676757969
+  orientation 0.6460116292049102 -0.38083519081528644 -0.6615387610478329 3.8852808207898044
+  position -1.9652434738691797 2.9820976202449856 9.850267216947342
 }
 DEF e-puck Robot {
-  translation 0.487156 0.54139 0.001
-  rotation 0 0 1 1.57078
+  translation -3.08099 3.02879 0.001
+  rotation 0 0 1 -1.0472253071795858
   children [
+    Lidar {
+      translation 0 0 0.06
+      fieldOfView 6.28319
+      numberOfLayers 1
+      maxRange 2.5
+    }
     DEF gps GPS {
     }
     DEF compass Compass {
-    }
-    Lidar {
-      translation 0 0 0.06
-      rotationStep 0.00613593
-      horizontalResolution 1024
-      fieldOfView 6.28319
-      numberOfLayers 1
-      maxRange 20
     }
     HingeJoint {
       jointParameters HingeJointParameters {
@@ -38,7 +36,7 @@ DEF e-puck Robot {
         }
       ]
       endPoint DEF EPUCK_LEFT_WHEEL Solid {
-        translation 0 0.025999999999999888 0.02
+        translation 0 0.02599999999999988 0.02
         rotation 0 1 0 0
         children [
           DEF EPUCK_WHEEL Transform {
@@ -190,7 +188,7 @@ DEF e-puck Robot {
         }
       ]
       endPoint DEF EPUCK_RIGHT_WHEEL Solid {
-        translation 0 -0.02599999999999986 0.02
+        translation 0 -0.02599999999999984 0.02
         rotation 0 1 0 0
         children [
           Transform {
@@ -2263,7 +2261,7 @@ RectangleArena {
   floorSize 8 8
   floorTileSize 4 4
 }
-DEF landmark1 Solid {
+DEF landmark Solid {
   translation 0.47 2.68 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2280,7 +2278,7 @@ DEF landmark1 Solid {
     1 0 0
   ]
 }
-DEF landmark2 Solid {
+DEF landmark Solid {
   translation 2.58 -0.38 0.34
   scale 0.5 0.5 0.5
   children [
@@ -2297,7 +2295,7 @@ DEF landmark2 Solid {
     1 0 0
   ]
 }
-DEF landmark3 Solid {
+DEF landmark Solid {
   translation 0.78 2.67 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2314,7 +2312,7 @@ DEF landmark3 Solid {
     1 0 0
   ]
 }
-DEF landmark4 Solid {
+DEF landmark Solid {
   translation 0.96 2.68 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2331,8 +2329,8 @@ DEF landmark4 Solid {
     1 0 0
   ]
 }
-DEF landmark5 Solid {
-  translation 1.97 2.24 0.12
+DEF landmark Solid {
+  translation 1.52 2.55 0.12
   scale 0.5 0.5 0.5
   children [
     Shape {
@@ -2348,7 +2346,75 @@ DEF landmark5 Solid {
     1 0 0
   ]
 }
-DEF landmark21 Solid {
+DEF landmark Solid {
+  translation 1.74 2.4 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(15)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.36 2.64 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(16)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.97 2.24 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(17)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.18 2.66 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(18)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
   translation -1.99 2.24 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2365,7 +2431,58 @@ DEF landmark21 Solid {
     1 0 0
   ]
 }
-DEF landmark22 Solid {
+DEF landmark Solid {
+  translation -1.37 2.7 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(12)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.53 2.49 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(13)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.76 2.35 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(14)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
   translation -1.99 2.07 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2382,7 +2499,7 @@ DEF landmark22 Solid {
     1 0 0
   ]
 }
-DEF landmark23 Solid {
+DEF landmark Solid {
   translation -1.99 1.91 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2399,7 +2516,7 @@ DEF landmark23 Solid {
     1 0 0
   ]
 }
-DEF landmark24 Solid {
+DEF landmark Solid {
   translation -1.99 1.72 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2416,7 +2533,7 @@ DEF landmark24 Solid {
     1 0 0
   ]
 }
-DEF landmark25 Solid {
+DEF landmark Solid {
   translation -1.99 1.54 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2433,7 +2550,7 @@ DEF landmark25 Solid {
     1 0 0
   ]
 }
-DEF landmark26 Solid {
+DEF landmark Solid {
   translation -1.99 1.33 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2450,7 +2567,7 @@ DEF landmark26 Solid {
     1 0 0
   ]
 }
-DEF landmark16 Solid {
+DEF landmark Solid {
   translation 1.97 2.08 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2467,7 +2584,7 @@ DEF landmark16 Solid {
     1 0 0
   ]
 }
-DEF landmark17 Solid {
+DEF landmark Solid {
   translation 1.97 1.91 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2484,7 +2601,7 @@ DEF landmark17 Solid {
     1 0 0
   ]
 }
-DEF landmark18 Solid {
+DEF landmark Solid {
   translation 1.97 1.73 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2501,7 +2618,7 @@ DEF landmark18 Solid {
     1 0 0
   ]
 }
-DEF landmark19 Solid {
+DEF landmark Solid {
   translation 1.97 1.54 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2518,8 +2635,8 @@ DEF landmark19 Solid {
     1 0 0
   ]
 }
-DEF landmark20 Solid {
-  translation 1.97 1.35 0.12
+DEF landmark Solid {
+  translation 1.97 -1.49 0.12
   scale 0.5 0.5 0.5
   children [
     Shape {
@@ -2535,7 +2652,1554 @@ DEF landmark20 Solid {
     1 0 0
   ]
 }
-DEF landmark6 Solid {
+DEF landmark Solid {
+  translation 1.97 -1.69 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(19)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.97 -1.89 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(22)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.97 -1.29 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(23)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.97 -1.29 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(24)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.97 1.35 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(21)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.97 -2.16 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(20)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.71 -2.36 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(25)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.45 -2.62 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(26)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.26 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(27)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.08 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(28)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.9 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(29)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.72 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(30)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.5 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(31)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.28 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(32)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.07 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(33)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.12 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(34)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.33 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(35)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.56 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(36)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.78 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(37)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.03 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(38)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.26 -3.03 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(39)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.26 -2.78 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(40)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.45 -2.51 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(41)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.7 -2.39 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(42)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.99 -2.39 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(43)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.99 -2.18 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(44)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.99 -1.97 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(45)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.99 -1.74 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(46)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.99 -1.51 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(47)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.99 -1.32 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(48)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.99 -0.82 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(49)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.27 -0.82 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(50)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.56 -0.82 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(51)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.86 -0.82 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(52)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.86 -0.57 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(53)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.86 -0.33 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(54)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.86 -0.07 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(55)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.86 0.22 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(56)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.86 0.52 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(57)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.86 0.78 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(58)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.56 0.78 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(59)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -2.24 0.78 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(60)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.93 0.78 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(61)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.62 0.78 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(62)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.35 0.78 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(63)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.35 0.5 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(64)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.35 0.22 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(65)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.35 -0.08 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(66)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.09 -0.08 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(71)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.77 -0.08 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(72)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.61 0.21 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(73)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.35 0.56 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(74)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.13 0.64 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(75)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.11 0.64 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(76)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.39 0.52 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(77)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.59 0.25 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(78)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.65 0 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(79)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.65 -0.28 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(103)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.5 -0.54 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(104)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.3 -0.63 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(105)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.03 -0.67 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(106)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.25 -0.67 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(107)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.51 -0.52 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(108)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -0.62 -0.32 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(109)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 0.88 0 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(80)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.12 0 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(81)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.33 0 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(82)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.33 0.22 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(83)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.33 0.48 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(84)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.33 0.74 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(85)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.57 0.74 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(86)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.88 0.74 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(87)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.08 0.74 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(88)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.34 0.74 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(89)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.58 0.74 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(90)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.85 0.74 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(91)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.85 0.46 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(92)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.85 0.12 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(93)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.85 -0.17 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(94)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.85 -0.47 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(95)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.85 -0.76 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(96)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.59 -0.76 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(97)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 2.27 -0.76 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(98)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.95 -0.76 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(99)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.66 -0.76 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(100)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.37 -0.76 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(101)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation 1.37 -0.44 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(102)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.35 -0.32 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(67)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.35 -0.58 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(68)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.35 -0.85 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(69)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
+  translation -1.62 -0.85 0.12
+  scale 0.5 0.5 0.5
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Sphere {
+        radius 0.1
+      }
+    }
+  ]
+  name "solid04(70)"
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF landmark Solid {
   translation 0.6 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2552,7 +4216,7 @@ DEF landmark6 Solid {
     1 0 0
   ]
 }
-DEF landmark7 Solid {
+DEF landmark Solid {
   translation 0.32 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2569,7 +4233,7 @@ DEF landmark7 Solid {
     1 0 0
   ]
 }
-DEF landmark8 Solid {
+DEF landmark Solid {
   translation 0.17 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2586,7 +4250,7 @@ DEF landmark8 Solid {
     1 0 0
   ]
 }
-DEF landmark9 Solid {
+DEF landmark Solid {
   translation -0.01 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2603,7 +4267,7 @@ DEF landmark9 Solid {
     1 0 0
   ]
 }
-DEF landmark10 Solid {
+DEF landmark Solid {
   translation -0.17 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2620,7 +4284,7 @@ DEF landmark10 Solid {
     1 0 0
   ]
 }
-DEF landmark11 Solid {
+DEF landmark Solid {
   translation -0.31 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2637,7 +4301,7 @@ DEF landmark11 Solid {
     1 0 0
   ]
 }
-DEF landmark12 Solid {
+DEF landmark Solid {
   translation -0.47 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2654,7 +4318,7 @@ DEF landmark12 Solid {
     1 0 0
   ]
 }
-DEF landmark13 Solid {
+DEF landmark Solid {
   translation -0.65 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2671,7 +4335,7 @@ DEF landmark13 Solid {
     1 0 0
   ]
 }
-DEF landmark14 Solid {
+DEF landmark Solid {
   translation -0.85 2.66 0.12
   scale 0.5 0.5 0.5
   children [
@@ -2688,8 +4352,8 @@ DEF landmark14 Solid {
     1 0 0
   ]
 }
-DEF landmark15 Solid {
-  translation -0.99 2.66 0.12
+DEF landmark Solid {
+  translation -1.09 2.66 0.12
   scale 0.5 0.5 0.5
   children [
     Shape {

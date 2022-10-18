@@ -12,10 +12,11 @@ CONTROL_SIGNALS = {
     "W": 1
 }
 
+LIDAR_RANGE = 2.5
 A_MAX = 6.28  # rad/s
 V_MAX = 0.25  # m/s
 ACCEL_MAX = 2.00  # m/s^2
-L = 52  # mm
+L = 52  # m
 D_THRESH = 0.05  # m
 A_THRESH = 0.005
 OG_RES = 0.02  # occupancy grid resolution

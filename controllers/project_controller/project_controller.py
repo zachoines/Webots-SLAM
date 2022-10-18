@@ -77,11 +77,11 @@ def get_robot_and_global_positions(robot, landmarks):
     return np.array(landmark_robot_positions), np.array(landmark_global_positions)
 
 
-def crash_detection(readings, fov=(-90, 90), threshold=0.1):
+def crash_detection(readings, fov=(-90, 90), threshold=0.2):
     '''
     Uses lidar object to detect obstacles closer than threshold within specified FOV
     '''
-    ang, dist = readings
+    ang, dist, _ = readings
     for a, d in zip(ang, dist):
         if fov[0] <= np.degrees(a) <= fov[1]:
             if d <= threshold:
@@ -215,7 +215,7 @@ while robot.step(timestep) != -1:
         continue
 
     # Get new measurement signals
-    readings = get_lidar_readings(lidar)
+    readings = get_lidar_readings(lidar, range_max=LIDAR_RANGE)
     all_g_p_l, all_z, pos_robot, bearing, detected_objects = get_measurements(gps, compass, camera)
 
     # Propagate state
@@ -226,7 +226,11 @@ while robot.step(timestep) != -1:
     x_hat_t, Sigma_x_t = agent.update(all_z.copy(), all_g_p_l.copy())
 
     # Update Occupancy Map
-    occ_map.update(readings, x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]], x_hat_t[ROBOT_STATE["THETA"]])
+    occ_map.update(readings, x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]], x_hat_t[ROBOT_STATE["THETA"]], lidar_max_range=LIDAR_RANGE)
+
+    # Print map for debug
+    if count % 100 == 0:
+        occ_map.print_map()
 
     # Halt and recalculate path if we are about to crash
     if not e_stop and crash_detection(readings):
@@ -304,13 +308,10 @@ while robot.step(timestep) != -1:
             d_pos = np.Infinity
             d_theta = np.Infinity
             current_destination = path.pop(0)
+            # occ_map.print_map()
 
         # Need to generate more points on path
         else:
             # Generate path to goal
             path, occ_points, pmap = get_path(occ_map, x_hat_t[ROBOT_STATE["X"]:ROBOT_STATE["Z"]], goal_pos)
             path = path[1:]  # First point irs robots current position
-
-
-
-

@@ -147,8 +147,8 @@ def map(x, in_min, in_max, out_min, out_max):
     return mapped
 
 
-def get_lidar_readings(lidar, ranges=[(-180, 180)]):
-    dists, range_max = np.array(lidar.getRangeImage()), lidar.getMaxRange()
+def get_lidar_readings(lidar, ranges=[(-180, 180)], range_max=2.5):
+    dists = np.array(lidar.getRangeImage())
     num_points = len(dists)
     angles = np.array([])
     points_in_range = int(num_points / len(ranges))
@@ -156,13 +156,9 @@ def get_lidar_readings(lidar, ranges=[(-180, 180)]):
         new_angles = np.linspace(start, end, points_in_range, endpoint=False)
         angles = np.concatenate((angles, np.deg2rad(new_angles)))
 
-    filtered_dists = []
-    for dist in dists:
-        if dist > range_max:
-            filtered_dists.append(range_max)
-        else:
-            filtered_dists.append(dist)
-    return np.array(angles), np.array(filtered_dists)
+    dists = np.clip(dists, 0, range_max)
+    inf_indexes = dists >= range_max
+    return np.array(angles), dists, inf_indexes
 
 
 def add_noise(v, loc, sig, shape):

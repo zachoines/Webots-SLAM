@@ -12,6 +12,7 @@ class AStar:
         self.min_y, self.max_y = 0, y
         self.motion = self.movement_pattern()
         self.x_width, self.y_width = x, y
+        # self.obstacle_map = np.round(occ_map.copy()).astype(int)
         self.obstacle_map = occ_map.copy()
 
     def Node(self, x, y, cost, parent_index):
@@ -159,10 +160,12 @@ class AStar:
         :return: boolean indicating if the robot will crash into something on the way to the goal
         '''
 
-        # bresenham_march(self.obstacle_map, [n1['y'], n1['x']], (n2['y'], n2['x']))
-        ray_cast = bresenham((n1['y'], n1['x']), (n2['y'], n2['x']))
-        indexes = self.obstacle_map[ray_cast[:, 0], ray_cast[:, 1]]
-        return max(indexes) >= 1.0
+        ray_cast = bresenham_march(self.obstacle_map, [n1['y'], n1['x']], (n2['y'], n2['x']))
+        # ray_cast = bresenham((n1['y'], n1['x']), (n2['y'], n2['x']))
+        # indexes = self.obstacle_map[ray_cast[:, 0], ray_cast[:, 1]]
+        # return max(indexes) >= 1.0
+        obstacles = ray_cast[:, 1]
+        return np.max(obstacles) >= 1.0
 
     def verify_node(self, target, current):
         '''
